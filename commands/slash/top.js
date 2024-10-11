@@ -13,12 +13,10 @@ metadata: {
 
 async run(client, int, tools) {
 
-    let lbLink = `${tools.WEBSITE}/leaderboard/${int.guild.id}`
-
     let db = await tools.fetchAll()
     if (!db || !db.users || !Object.keys(db.users).length) return tools.warn(`Nobody in this server is ranked yet!`);
     else if (!db.settings.enabled) return tools.warn("*xpDisabled")
-    else if (db.settings.leaderboard.disabled) return tools.warn("The leaderboard is disabled in this server!" + (tools.canManageServer(int.member) ? `\nAs a moderator, you can still privately view the leaderboard here: ${lbLink}` : ""))
+    else if (db.settings.leaderboard.disabled) return tools.warn("The leaderboard is disabled in this server!" + (tools.canManageServer(int.member)))
 
     let pageNumber = int.options.get("page")?.value || 1
     let pageSize = 10
@@ -53,7 +51,6 @@ async run(client, int, tools) {
     let xpEmbed = new PageEmbed(embed, rankings, {
         page: pageNumber, size: pageSize, owner: int.user.id,  ephemeral: isHidden,
         mapFunction: (x, y, p) => `**${p})** ${x.id == highlight ? "**" : ""}Lv. ${tools.getLevel(x.xp, db.settings)} - <@${x.id}> (${tools.commafy(x.xp)} XP)${x.id == highlight ? "**" : ""}`,
-        extraButtons: [ tools.button({style: "Link", label: "Online Leaderboard", url: lbLink}) ]
     })
     if (!xpEmbed.data.length) return tools.warn("There are no members on this page!")
 

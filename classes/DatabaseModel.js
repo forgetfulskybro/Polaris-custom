@@ -1,14 +1,13 @@
 // for the sake of the open source project, i've moved all the database methods here. maybe it'll help if you wanna switch to a different db
-
+const { ChalkAdvanced } = require('chalk-advanced');
 const mongoose = require("mongoose")
 
 // connect to database
 const uri = process.env.MONGO_DB_URI
-const dbName = process.env.MONGO_DB_NAME || "polaris"
-const dbSettings = uri ? { dbName } : { dbName, user: process.env.MONGO_DB_USERNAME, pass: process.env.MONGO_DB_PASSWORD }
-
-mongoose.connect(uri || `mongodb://${process.env.MONGO_DB_IP}`, dbSettings)
-.then(() => console.log(`Database connected! (${+process.uptime().toFixed(2)} secs)`))
+mongoose.connect(uri)
+.then(() => console.log(`${ChalkAdvanced.white('[ Database ]')} ${ChalkAdvanced.gray(
+        '>',
+    )} ${ChalkAdvanced.green('Accessed database')} (${+process.uptime().toFixed(2)} secs)`))
 .catch(e => { console.error('\x1b[40m\x1b[31m%s\x1b[0m', "!!! Error connecting to the database !!!"); console.error(e) })
 
 class Model {

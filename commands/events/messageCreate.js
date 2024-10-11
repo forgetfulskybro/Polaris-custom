@@ -1,15 +1,15 @@
 const LevelUpMessage = require("../../classes/LevelUpMessage.js")
 const config = require("../../config.json")
 
-module.exports = {
-
-async run(client, message, tools) {
-
-    if (config.lockBotToDevOnly && !tools.isDev(message.author)) return
+module.exports =  async (client, message) => {
+    if (message.system || message.author.bot) return
+    else if (!message.guild || !message.member) return // dm stuff
+    
+    if (config.lockBotToDevOnly && !client.globalTools.isDev(message.author)) return
 
     // fetch server xp settings, this can probably be optimized with caching but shrug
     let author = message.author.id
-    let db = await tools.fetchSettings(author, message.guild.id)
+    let db = await client.globalTools.fetchSettings(author, message.guild.id)
     if (!db || !db.settings?.enabled) return
     
     let settings = db.settings
@@ -19,13 +19,13 @@ async run(client, message, tools) {
     if (userData.cooldown > Date.now()) return // on cooldown, stop here
 
     // check role+channel multipliers, exit if 0x
-    let multiplierData = tools.getMultiplier(message.member, settings, message.channel)
+    let multiplierData = client.globalTools.getMultiplier(message.member, settings, message.channel)
     if (multiplierData.multiplier <= 0) return
 
     // randomly choose an amount of XP to give
     let oldXP = userData.xp
     let xpRange = [settings.gain.min, settings.gain.max].map(x => Math.round(x * multiplierData.multiplier))
-    let xpGained = tools.rng(...xpRange) // number between min and max, inclusive
+    let xpGained = client.globalTools.rng(...xpRange) // number between min and max, inclusive
 
     if (xpGained > 0) userData.xp += Math.round(xpGained)
     else return
@@ -40,15 +40,15 @@ async run(client, message, tools) {
     client.db.update(message.guild.id, { $set: { [`users.${author}`]: userData } }).exec();
 
     // check for level up
-    let oldLevel = tools.getLevel(oldXP, settings)
-    let newLevel = tools.getLevel(userData.xp, settings)
+    let oldLevel = client.globalTools.getLevel(oldXP, settings)
+    let newLevel = client.globalTools.getLevel(userData.xp, settings)
     let levelUp = newLevel > oldLevel
 
     // auto sync roles on xp gain or level up
     let syncMode = settings.rewardSyncing.sync
     if (syncMode == "xp" || (syncMode == "level" && levelUp)) { 
-        let roleCheck = tools.checkLevelRoles(message.guild.roles.cache, message.member.roles.cache, newLevel, settings.rewards, null, oldLevel)
-        tools.syncLevelRoles(message.member, roleCheck).catch(() => {})
+        let roleCheck = client.globalTools.checkLevelRoles(message.guild.roles.cache, message.member.roles.cache, newLevel, settings.rewards, null, oldLevel)
+        client.globalTools.syncLevelRoles(message.member, roleCheck).catch(() => {})
     }
 
     // level up message
@@ -59,5 +59,4 @@ async run(client, message, tools) {
             lvlMessage.send()
         }
     }
-
-}}
+}

@@ -1,3 +1,7 @@
+This is a modified version of the original Polaris bot by GDColon. The original code is available [here](https://github.com/GDColon/Polaris-Open). This brings my own support bot that adds Modmail, Invite Tracking, and Verification.
+
+
+
 # Polaris!
 ...is a super customizable XP bot for Discord with all sorts of neat features!
 Unfortunately, it's become increasingly annoying to host, so I'm passing the torch by open-sourcing all the messy code and allowing anyone to host this thing!

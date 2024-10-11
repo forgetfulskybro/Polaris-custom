@@ -1,14 +1,23 @@
 {
-  "test_server_ids": ["12345678"],
-
-  "developer_ids": ["12345678"],
-
+  "test_server_ids": ["286252263109033984"],
+  "developer_ids": ["268843733317976066"],
   "lockBotToDevOnly": false,
-  
-  "enableWebServer": true,
-  "serverPort": 6880,
-  "siteURL": "http://localhost:6880",
-  
-  "changelogURL": "",
-  "supportURL": ""
+  "enableWebServer": false,
+  "admins": [],
+  "mainGuild": "286252263109033984",
+  "blocks": "769425687492165642",
+  "log": "769424410150961224",
+  "giveaway": "622617791538921492",
+  "suggests": "411644361571434496",
+  "management": "869612719991562242",
+  "moderator": "398965932418138125",
+  "parent": "411629908217954311",
+  "emojis": {
+    "redTick": "❌",
+    "greenTick": "✅"
+  },
+  "webhook": {
+    "name": "Vortex",
+    "icon": "https://cdn.discordapp.com/avatars/240254129333731328/a7955ca7f5e6176f679cd3e4813b15fa.webp?size=80"
+  }
 }

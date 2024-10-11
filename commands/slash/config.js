@@ -18,7 +18,6 @@ async run(client, int, tools) {
         `**XP curve:** ${settings.curve[3]}x³ + ${settings.curve[2]}x² + ${settings.curve[1]}x`,
         `**Level up message:** ${settings.levelUp.enabled && settings.levelUp.message ? (settings.levelUp.embed ? "Enabled (embed)" : "Enabled") : "Disabled"}`,
         `**Rank cards:** ${settings.rankCard.disabled ? "Disabled" : settings.rankCard.ephemeral ? "Enabled (forced hidden)" : "Enabled"}`,
-        `**Leaderboard:** ${settings.leaderboard.disabled ? "Disabled" : `[${settings.leaderboard.private ? "Private" : "Public"}](<${tools.WEBSITE}/leaderboard/${int.guild.id}>)`}`
     ]
 
     let embed = tools.createEmbed({
@@ -35,7 +34,6 @@ async run(client, int, tools) {
     let buttons = tools.button([
         {style: "Success", label: "Edit Settings", emoji: "🛠", customID: "settings_list"},
         toggleButton,
-        {style: "Link", label: "Edit Online", emoji: "🌎", url: `${tools.WEBSITE}/settings/${int.guild.id}`},
         {style: "Secondary", label: "Export Data", emoji: "⏏️", customId: "export_xp"}
     ])
 

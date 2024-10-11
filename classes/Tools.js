@@ -5,10 +5,6 @@ const Discord = require('discord.js')
 
 class Tools {
     constructor(client, int) {
-        
-        this.WEBSITE = config.siteURL
-        if (!this.WEBSITE.startsWith("http")) this.WEBSITE = "https://gdcolon.com/polaris" // backup URL or some buttons will break
-
         this.COLOR = 0x00ff80   // polaris green
 
         // has manage guild perm
