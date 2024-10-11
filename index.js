@@ -19,7 +19,7 @@ const rawStatus = require("./json/auto/status.json")
 const client = new Discord.Client({
     allowedMentions: { parse: ["users", "roles"] },
     makeCache: Discord.Options.cacheWithLimits({ MessageManager: 0 }),
-    intents: ['Guilds', 'GuildMessages', 'DirectMessages', 'GuildMessageReactions', 'MessageContent'].map(i => Discord.GatewayIntentBits[i]),
+    intents: ['Guilds', 'GuildMessages', 'GuildMembers', 'DirectMessages', 'GuildMessageReactions', 'MessageContent'].map(i => Discord.GatewayIntentBits[i]),
     partials: ['Channel'].map(p => Discord.Partials[p]),
     failIfNotExists: false
 })
