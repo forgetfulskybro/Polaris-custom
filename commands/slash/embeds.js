@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder , ButtonBuilder} = require("discord.js");
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
 module.exports = {
   metadata: {
     dev: true,
@@ -23,12 +23,8 @@ module.exports = {
       case "tickets":
         const embed = new EmbedBuilder()
           .setTitle("Support Tickets")
-          .setDescription(
-            `Use the buttons below the panel to open a support ticket.`
-          )
-          .setImage(
-            `https://cdn.discordapp.com/attachments/864868908661997589/1161123185383723058/bluesky.jpg?ex=6537273c&is=6524b23c&hm=53a94b3531420b1cacce5380312ee478783ca06832fb7708e945b3edb5529938&`
-          )
+          .setDescription(`Use the buttons below the panel to open a support ticket.`)
+          .setImage(`https://i.imgur.com/ETYtGyT.png`)
           .setColor("#0089DE");
         const button = new ActionRowBuilder().addComponents(
           new ButtonBuilder()
