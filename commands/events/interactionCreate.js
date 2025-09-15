@@ -2,8 +2,32 @@ const Tools = require("../../classes/Tools.js");
 const Blocked = require("../../models/blocked.js");
 module.exports = async (client, interaction) => {
   let foundCommand;
-  // for setting changes
   if (interaction.isStringSelectMenu()) {
+    switch (interaction.customId) {
+      case "colorRoles":
+      case "conRoles":
+      case "pingRoles":
+        let colorRole = interaction.values[0],
+          member = interaction.member,
+          hasRole = interaction.member.roles.cache.has(colorRole);
+        if (!colorRole) {
+          return interaction.deferUpdate();
+        }
+        if (hasRole) {
+          member.roles.remove(colorRole);
+          return await interaction.reply({
+            content: `Removed <@&${colorRole}> role.`,
+            ephemeral: true,
+          });
+        } else {
+          member.roles.add(colorRole);
+          return await interaction.reply({
+            content: `Added <@&${colorRole}> role.`,
+            ephemeral: true,
+          });
+        }
+    }
+
     if (interaction.customId.startsWith("configmenu_")) {
       if (interaction.customId.split("_")[1] != interaction.user.id)
         return interaction.deferUpdate();
@@ -55,7 +79,11 @@ module.exports = async (client, interaction) => {
       `button:${interaction.customId.split("~")[0]}`
     );
     if (foundCommand) {
-      foundCommand = client.commands.get(foundCommand.metadata.slashEquivalent);
+      if (foundCommand?.metadata?.slashEquivalent) {
+        foundCommand = client.commands.get(
+          foundCommand.metadata.slashEquivalent
+        );
+      }
 
       try {
         await foundCommand.run(client, interaction);

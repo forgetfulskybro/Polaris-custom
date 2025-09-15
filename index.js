@@ -18,7 +18,6 @@ const rawStatus = require("./json/auto/status.json")
 // create client
 const client = new Discord.Client({
     allowedMentions: { parse: ["users", "roles"] },
-    makeCache: Discord.Options.cacheWithLimits({ MessageManager: 0 }),
     intents: ['Guilds', 'GuildMessages', 'GuildMembers', 'DirectMessages', 'GuildMessageReactions', 'MessageContent'].map(i => Discord.GatewayIntentBits[i]),
     partials: ['Channel'].map(p => Discord.Partials[p]),
     failIfNotExists: false
@@ -35,7 +34,6 @@ client.used = new Map();
 client.buttons = new Map();
 client.globalTools = new Tools(client);
 client.db = new Model("servers", require("./database_schema.js").schema)
-client.commands = new Discord.Collection()
 
 client.statusData = rawStatus
 client.updateStatus = function() {

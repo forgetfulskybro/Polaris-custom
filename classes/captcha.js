@@ -69,6 +69,13 @@ module.exports = class Captcha {
           });
 
         await captcha.findOneAndDelete({ code: code });
+        const channel = interaction.client.channels.cache.get("1219306420818808912");
+        let thread = channel.threads.cache.get(interaction.client.config.thread);
+        if (!thread) thread = channel.threads
+          .fetchArchived()
+          .then((t) => t.threads.get(interaction.client.config.thread));
+        
+        thread.send({ content: `<@${interaction.user.id}> was approved.` });
         return modalInteraction
           .reply({
             content: `${modalInteraction.client.config.emojis.greenTick} Verified your account!`,
@@ -89,7 +96,7 @@ module.exports = class Captcha {
     const user = await captcha.findOne({ user: interaction.user.id });
     if (user) return interaction.deferUpdate();
     const code = this.randomString();
-    const verifyCaptcha = await new captcha({
+    await new captcha({
       code: code,
       user: interaction.user.id,
     }).save();
