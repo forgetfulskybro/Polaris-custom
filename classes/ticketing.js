@@ -323,7 +323,7 @@ module.exports = class Ticketing {
           const input = modalInteraction.components[0].components[0].value;
 
           const embed = new ContainerBuilder()
-            .addTextDisplayComponents((textDisplay) => {
+            .addTextDisplayComponents((textDisplay) =>
               textDisplay.setContent(
                 `**Ticket Closed: ${
                   interaction.user.username
@@ -336,8 +336,8 @@ module.exports = class Ticketing {
                   .replace("ago", "")}\n**Thread ID:** #${
                   recipientThread.id
                 }\n**Issue:** "${recipientThread.issue}"\n**Reason:** ${input}`
-              );
-            })
+              )
+            )
             .setAccentColor(0x0598f7);
 
           modalInteraction.client.channels.cache
@@ -361,7 +361,7 @@ module.exports = class Ticketing {
     }
 
     const embed = new ContainerBuilder()
-      .addTextDisplayComponents((textDisplay) => {
+      .addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(
           `**Ticket Closed: ${
             interaction.user.username
@@ -376,8 +376,8 @@ module.exports = class Ticketing {
           }\n**Issue:** "${
             recipientThread.issue
           }"\n**Reason:** Closed without reason`
-        );
-      })
+        )
+      )
       .setAccentColor(0x0598f7);
 
     interaction.client.channels.cache
