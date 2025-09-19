@@ -1,4 +1,10 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require("discord.js");
+const {
+  EmbedBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ContainerBuilder,
+  MessageFlags,
+} = require("discord.js");
 const captcha = require("../models/captcha.js");
 const crypto = require("node:crypto");
 
@@ -56,7 +62,7 @@ module.exports = class Captcha {
           return modalInteraction
             .reply({
               content: `${modalInteraction.client.config.emojis.redTick} Invalid captcha code. Try again.`,
-              ephemeral: true,
+              flags: Message,
             })
             .catch(() => {});
 
@@ -69,17 +75,22 @@ module.exports = class Captcha {
           });
 
         await captcha.findOneAndDelete({ code: code });
-        const channel = interaction.client.channels.cache.get("1219306420818808912");
-        let thread = channel.threads.cache.get(interaction.client.config.thread);
-        if (!thread) thread = channel.threads
-          .fetchArchived()
-          .then((t) => t.threads.get(interaction.client.config.thread));
-        
+        const channel = interaction.client.channels.cache.get(
+          "1219306420818808912"
+        );
+        let thread = channel.threads.cache.get(
+          interaction.client.config.thread
+        );
+        if (!thread)
+          thread = channel.threads
+            .fetchArchived()
+            .then((t) => t.threads.get(interaction.client.config.thread));
+
         thread.send({ content: `<@${interaction.user.id}> was approved.` });
         return modalInteraction
           .reply({
             content: `${modalInteraction.client.config.emojis.greenTick} Verified your account!`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           })
           .catch((e) => {
             console.log(e);
@@ -101,33 +112,38 @@ module.exports = class Captcha {
       user: interaction.user.id,
     }).save();
 
-    const button = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId("captcha")
-        .setLabel("Captcha")
-        .setStyle("Secondary")
+    const embed = new ContainerBuilder()
+      .setAccentColor(0x0099ff)
+      .addTextDisplayComponents((textDisplay) => 
+        textDisplay.setContent(
+          `Hello, you're being sent this message to verify your identity with a captcha code. Click the button below and input the code to be verified!\n\n\`${code}\``
+        )
+    )
+      .addSeparatorComponents(separator => separator)
+      .addActionRowComponents((actionRow) =>
+        actionRow.setComponents(
+          new ButtonBuilder()
+            .setCustomId("captcha")
+            .setLabel("Captcha")
+            .setStyle("Secondary")
+        )
     );
 
     let dm = false;
     await interaction.user
       .send({
-        embeds: [
-          new EmbedBuilder()
-            .setTitle("Captcha")
-            .setDescription(
-              `Hello, you're being sent this message to verify your identity with a captcha code. Click the button below and input the code to be verified!\n\n\`${code}\``
-            ),
-        ],
-        components: [button],
+        components: [embed],
+        flags: MessageFlags.IsComponentsV2,
       })
       .catch((e) => {
+        console.log(e);
         dm = true;
       });
 
     if (dm) {
       await captcha.deleteOne({ user: interaction.user.id });
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${interaction.client.config.emojis.redTick} Unable to send you a message for verification. Make sure to turn your Direct Messages on for this server.`,
       });
     }

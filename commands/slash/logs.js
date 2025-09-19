@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const Thread = require("../../models/thread.js");
 const Messages = require("../../models/message.js");
 module.exports = {
@@ -18,19 +19,19 @@ module.exports = {
   async run(client, interaction, tools) {
     if (!interaction.guild)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You have to be in a channel to run this command!`,
       });
     if (!interaction.member.roles.cache.has(client.config.moderator))
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You must be apart of our support team to access this command!`,
       });
 
     const ID = interaction.options.getString("case");
     if (isNaN(ID))
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} Provided thread ID was invalid!`,
       });
     const msgs = await Messages.find({
@@ -38,7 +39,7 @@ module.exports = {
     });
     if (msgs.length === 0)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} Provided thread ID has no messages to be displayed!`,
       });
     const thread = await Thread.findOne({
@@ -46,7 +47,7 @@ module.exports = {
     });
     if (!thread)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} Provided thread ID doesn't exist!`,
       });
     if (
@@ -55,7 +56,7 @@ module.exports = {
       !interaction.member.roles.cache.has(client.config.management)
     )
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `That thread was locked for only developers to view!`,
       });
 
@@ -89,7 +90,7 @@ Created At: ${new Date(thread.timestamp).toLocaleString()}
     }
 
     interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: `${client.config.emojis.greenTick} Thread **#${thread.id}** Details:`,
       files: [
         {

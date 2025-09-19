@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const Thread = require("../../models/thread.js");
 module.exports = {
   metadata: {
@@ -14,7 +15,10 @@ module.exports = {
         type: "string",
         name: "type",
         description: "Provide which type of ticket you want to open",
-        choices: [{ name: "sky", value: "sky" }, { name: "mod", value: "mod" }],
+        choices: [
+          { name: "sky", value: "sky" },
+          { name: "mod", value: "mod" },
+        ],
         required: true,
       },
     ],
@@ -26,7 +30,7 @@ module.exports = {
 
     if (!interaction.member.roles.cache.has(client.config.moderator))
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Error! Only moderators have access to open tickets.`,
       });
 
@@ -35,7 +39,7 @@ module.exports = {
       !interaction.member.roles.cache.has(client.config.management)
     )
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Error! Only management members have access to open tickets for sky.`,
       });
 
@@ -46,7 +50,7 @@ module.exports = {
 
     if (haveThread)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Error! A thread is already ongoing in <#${haveThread.channel}>.`,
       });
 

@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const Thread = require("../../models/thread.js");
 module.exports = {
   metadata: {
@@ -8,12 +9,12 @@ module.exports = {
   async run(client, interaction, tools) {
     if (!interaction.guild)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You have to be in a recipient's channel to run this command!`,
       });
     if (!interaction.member.roles.cache.has(client.config.management))
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You must be apart of our support team to access this command!`,
       });
 
@@ -23,7 +24,7 @@ module.exports = {
     });
     if (!recipientThread)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} There's no concurring thread in this channel!`,
       });
 
@@ -38,7 +39,7 @@ module.exports = {
           console.log(e);
         });
       interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.greenTick} Successfully transferred to only administration view.`,
       });
       await recipientThread.updateOne({
@@ -56,7 +57,7 @@ module.exports = {
           console.log(e);
         });
       interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.greenTick} Successfully disabled administrative view.`,
       });
       await recipientThread.updateOne({

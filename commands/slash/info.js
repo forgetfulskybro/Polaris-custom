@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const Thread = require("../../models/thread.js");
 module.exports = {
   metadata: {
@@ -25,7 +26,7 @@ module.exports = {
       } **Database**: ${dbPing}ms
       
       **Uptime**: <t:${unixstamp}:R>      `,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

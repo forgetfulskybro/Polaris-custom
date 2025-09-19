@@ -1,4 +1,5 @@
 const util = require("util");
+const { MessageFlags } = require("discord.js");
 
 module.exports = {
   metadata: {
@@ -25,12 +26,22 @@ module.exports = {
       })
       .then((x) => {
         if (typeof x !== "string") x = util.inspect(x);
-        int.reply({ content: x || "** **", ephemeral: true }).catch((e) => {
-          int.reply({ content: `**Error**: ${e.message}`, ephemeral: true }).catch(() => {});
-        });
+        int
+          .reply({ content: x || "** **", flags: MessageFlags.Ephemeral })
+          .catch((e) => {
+            int
+              .reply({
+                content: `**Error**: ${e.message}`,
+                flags: MessageFlags.Ephemeral,
+              })
+              .catch(() => {});
+          });
       })
       .catch((e) => {
-        int.reply({ content: `**Error:** ${e.message}`, ephemeral: true });
+        int.reply({
+          content: `**Error:** ${e.message}`,
+          flags: MessageFlags.Ephemeral,
+        });
         console.warn(e);
       });
   },

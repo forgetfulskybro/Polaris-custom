@@ -1,4 +1,4 @@
-const { EmbedBuilder } = require("discord.js");
+const { EmbedBuilder, MessageFlags } = require("discord.js");
 const Snippet = require("../../models/snippet.js");
 const Message = require("../../models/message.js");
 const Thread = require("../../models/thread.js");
@@ -27,12 +27,12 @@ module.exports = {
     // Don't hurt me for this code. It's kind of old but works so I don't care enough to change it. I can really relate to the Polaris bot as its code is horrendous lol
     if (!interaction.guild)
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You have to be in a channel to run this command!`,
       });
     if (!interaction.member.roles.cache.has(client.config.moderator))
       return interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `${client.config.emojis.redTick} You must be apart of our support team to access this command!`,
       });
     switch (interaction.options._hoistedOptions[0].value) {
@@ -74,7 +74,7 @@ module.exports = {
 
             if (!recipientThread)
               return modalInteraction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `${client.config.emojis.redTick} There's no concurring thread in this channel!`,
               });
 
@@ -93,7 +93,7 @@ module.exports = {
 
             if (!snipp)
               return modalInteraction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `${client.config.emojis.redTick} Snippet \`${input}\` doesn't exist!`,
               });
 
@@ -173,12 +173,12 @@ module.exports = {
             });
             if (snipp)
               return modalInteraction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `${client.config.emojis.redTick} A snippet with name \`${input}\` already exists!`,
               });
 
             modalInteraction.reply({
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
               content: `${client.config.emojis.greenTick} Successfully created snippet \`${input}\`!`,
             });
 
@@ -231,7 +231,7 @@ module.exports = {
             const msg = await channel.reply({
               embeds: [this.pages[0]],
               components: [buttons],
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
             });
             const collector = msg.createMessageComponentCollector();
 
@@ -244,13 +244,13 @@ module.exports = {
                     case "first":
                       if (this.page === 0) {
                         return await inter.reply({
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                           content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
                         });
                       } else {
                         await inter.update({
                           embeds: [this.pages[0]],
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                         });
                         return (this.page = 0);
                       }
@@ -258,11 +258,11 @@ module.exports = {
                       if (this.pages[this.page - 1]) {
                         return await inter.update({
                           embeds: [this.pages[--this.page]],
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                         });
                       } else {
                         return await inter.reply({
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                           content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
                         });
                       }
@@ -270,24 +270,24 @@ module.exports = {
                       if (this.pages[this.page + 1]) {
                         return await inter.update({
                           embeds: [this.pages[++this.page]],
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                         });
                       } else {
                         return await inter.reply({
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                           content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
                         });
                       }
                     case "last":
                       if (this.page === this.pages.length - 1) {
                         return await inter.reply({
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                           content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
                         });
                       } else {
                         await inter.update({
                           embeds: [this.pages[this.pages.length - 1]],
-                          ephemeral: true,
+                          flags: MessageFlags.Ephemeral,
                         });
                         return (this.page = this.pages.length - 1);
                       }
@@ -303,7 +303,7 @@ module.exports = {
         const snipp = await Snippet.find();
         if (snipp.length === 0)
           return interaction.reply({
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             content: `${client.config.emojis.redTick} There's currently no snippets to be displayed! You can create some by using \`/snippets add\``,
           });
         const page = new Paginator([], {});
@@ -363,7 +363,7 @@ module.exports = {
       case "remove": {
         if (!interaction.member.roles.cache.has(client.config.management))
           return interaction.reply({
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
             content: `${client.config.emojis.redTick} You must be a developer to use this sub-command! Contact one if you need a snippet deleted.`,
           });
 
@@ -404,12 +404,12 @@ module.exports = {
             });
             if (!snipp)
               return modalInteraction.reply({
-                ephemeral: true,
+                flags: MessageFlags.Ephemeral,
                 content: `${client.config.emojis.redTick} Snippet \`${input}\` doesn't exist to delete!`,
               });
 
             modalInteraction.reply({
-              ephemeral: true,
+              flags: MessageFlags.Ephemeral,
               content: `${client.config.emojis.greenTick} Successfully deleted snippet \`${input}\`!`,
             });
           })

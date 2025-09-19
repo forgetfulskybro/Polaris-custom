@@ -18,6 +18,7 @@ module.exports = {
         description: "Type of embed",
         required: true,
         choices: [
+          { name: "rules", value: "rules" },
           { name: "tickets", value: "tickets" },
           { name: "verify", value: "verify" },
           { name: "roles", value: "roles" },
@@ -28,6 +29,69 @@ module.exports = {
 
   async run(client, interaction, tools) {
     switch (interaction.options._hoistedOptions[0].value) {
+      case "rules":
+        const rules = new ContainerBuilder()
+          .setAccentColor(0x0089de)
+          .addTextDisplayComponents((textDisplay) =>
+            textDisplay.setContent(`
+These rules have been made in order to keep the server safe for everyone. Every member must follow these rules at all times. If you break the rules, you will receive a warning. 
+<:tree_start:1418433583776792726>Important things to keep in mind:
+<:tree_rightContinue:1418433563141079081>This is an :flag_us: **English Only** server.
+<:tree_rightContinue:1418433563141079081>Some rules may result in a bigger action than just a warning.
+<:tree_right:1418433544681689129>__Not every rule is listed here, check channel topics__
+
+**1. Respect Everyone and don't cause drama**Don't harass/bully or be toxic and avoid having any fights/creating drama in this server.
+
+**2. Follow Discord ToS**Make sure to follow Discord Terms of Service and guidelines at all times. Any violation will result in an instant ban. (e.g. Being under 13) 
+`)
+          )
+          .addActionRowComponents((actionRow) =>
+            actionRow.setComponents(
+              new ButtonBuilder()
+                .setLabel("Discord Guidelines")
+                .setStyle("Link")
+                .setURL("https://discord.com/guidelines"),
+              new ButtonBuilder()
+                .setLabel("Discord Terms")
+                .setStyle("Link")
+                .setURL("https://discord.com/terms")
+            )
+          )
+          .addTextDisplayComponents((textDisplay) =>
+            textDisplay.setContent(`
+
+**3. No Form of Racism**Any form of racism will not be tolerated. The use of racial slurs (e.g. N-word) are prohibited and will result in a permanent ban. Do not misuse spoilers to make words look like racial slurs. (e.g. Ninja)
+
+**4. No Illegal Actions**Do not talk about or do anything illegal in the server. This includes posting code that can be used to commit a crime. Do not post malicious links or files that could be used to steal accounts or information anywhere.
+
+**5. No NSFW**Do not send any NSFW images/emotes or discuss NSFW topics anywhere in this server. This also includes any suggestive emojis.
+
+**6. Controversial Topics**Controversial topics are allowed to an extent, depends on what they are.
+
+**7. Do Not Spam**<:tree_start:1418433583776792726> Don't spam within channels, this can mean:
+<:tree_rightContinue:1418433563141079081>__Chat Flood:__ Typing separate lines very quickly.
+<:tree_rightContinue:1418433563141079081>__Wall Text:__ Typing out large blocks of text.
+<:tree_rightContinue:1418433563141079081>__Chaining:__ Lyrics that make up a song, counting down, etc.
+<:tree_rightContinue:1418433563141079081>__Repetitive Messages:__ Posting the same images/emojis multiple times.
+<:tree_right:1418433544681689129>__Epileptic Emotes:__ Posting/reacting with flashy GIFs or Emotes.
+
+**8. Do not Self-Advertise**Don't promote your stuff anywhere in the server and in DMs.
+
+**9. Stay on Topic**Keep your topics in the correct channels and if you don't know what channel is for you, can look at the channel topics/pins to see exactly what you must keep on-topic there. Bot commands should not be used in channels meant for conversing. If the commands are related to the topic they can be used as long as they aren't being spammed. 
+
+**10. Do not argue with Staff**Do not argue with staff in chats instead, message a higher ranked staff member. Do not ping or annoy staff members without a valid reason. Staff have the right to punish members for reasons that haven't been listed in the rules as long as the reason is valid.
+
+**11. No Begging**Do not beg for code, nitro, roles, items or anything similar from anyone in the server.
+
+**12. No Impersonation**Do not impersonate people/bots by using identical profile pictures or names.
+`)
+          );
+
+        interaction.channel.send({
+          components: [rules],
+          flags: MessageFlags.IsComponentsV2,
+        });
+        break;
       case "tickets":
         const tickets = new ContainerBuilder()
           .setAccentColor(0x0089de)
@@ -296,7 +360,7 @@ module.exports = {
 
     interaction.reply({
       content: `Successfully used \`${interaction.options._hoistedOptions[0].value}\` embed.`,
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
   },
 };

@@ -5,6 +5,7 @@ module.exports = async (client, message) => {
   // if (message.channel.id == "1167953302793756712" && message.author.id == "1167953594314661899") return message.reply(`<@&1167954257887105045>`);
   if (message.system || message.author.bot) return;
   else if (!message.guild || !message.member) return; // dm stuff
+  await client.ticket.message(message);
 
   if (config.lockBotToDevOnly && !client.globalTools.isDev(message.author))
     return;

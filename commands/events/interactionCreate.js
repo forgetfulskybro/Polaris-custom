@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 const Tools = require("../../classes/Tools.js");
 const Blocked = require("../../models/blocked.js");
 module.exports = async (client, interaction) => {
@@ -17,13 +18,13 @@ module.exports = async (client, interaction) => {
           member.roles.remove(colorRole);
           return await interaction.reply({
             content: `Removed <@&${colorRole}> role.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         } else {
           member.roles.add(colorRole);
           return await interaction.reply({
             content: `Added <@&${colorRole}> role.`,
-            ephemeral: true,
+            flags: MessageFlags.Ephemeral,
           });
         }
     }
@@ -71,7 +72,7 @@ module.exports = async (client, interaction) => {
       console.error(e);
       interaction.reply({
         content: "**Error!** " + e.message,
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
       });
     }
   } else if (interaction.isButton()) {
@@ -91,7 +92,7 @@ module.exports = async (client, interaction) => {
         console.error(e);
         interaction.reply({
           content: "**Error!** " + e.message,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
       }
     } else {
@@ -102,7 +103,7 @@ module.exports = async (client, interaction) => {
       if (block)
         return interaction.reply({
           content: `## You are currently blocked from opening tickets.\n\nReason: ${block.reason}`,
-          ephemeral: true,
+          flags: MessageFlags.Ephemeral,
         });
 
       switch (interaction.customId) {
