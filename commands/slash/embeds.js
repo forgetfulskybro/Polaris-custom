@@ -36,9 +36,9 @@ module.exports = {
             textDisplay.setContent(`
 These rules have been made in order to keep the server safe for everyone. Every member must follow these rules at all times. If you break the rules, you will receive a warning. 
 <:tree_start:1418433583776792726>Important things to keep in mind:
-<:tree_rightContinue:1418433563141079081>This is an :flag_us: **English Only** server.
-<:tree_rightContinue:1418433563141079081>Some rules may result in a bigger action than just a warning.
-<:tree_right:1418433544681689129>__Not every rule is listed here, check channel topics__
+<:log_downrightdown:1420807950708113529>This is an :flag_us: **English Only** server.
+<:log_downrightdown:1420807950708113529>Some rules may result in a bigger action than just a warning.
+<:log_downright:1420807935608754217>__Not every rule is listed here, check channel topics__
 
 **1. Respect Everyone and don't cause drama**Don't harass/bully or be toxic and avoid having any fights/creating drama in this server.
 
@@ -69,11 +69,11 @@ These rules have been made in order to keep the server safe for everyone. Every 
 **6. Controversial Topics**Controversial topics are allowed to an extent, depends on what they are.
 
 **7. Do Not Spam**<:tree_start:1418433583776792726> Don't spam within channels, this can mean:
-<:tree_rightContinue:1418433563141079081>__Chat Flood:__ Typing separate lines very quickly.
-<:tree_rightContinue:1418433563141079081>__Wall Text:__ Typing out large blocks of text.
-<:tree_rightContinue:1418433563141079081>__Chaining:__ Lyrics that make up a song, counting down, etc.
-<:tree_rightContinue:1418433563141079081>__Repetitive Messages:__ Posting the same images/emojis multiple times.
-<:tree_right:1418433544681689129>__Epileptic Emotes:__ Posting/reacting with flashy GIFs or Emotes.
+<:log_downrightdown:1420807950708113529>__Chat Flood:__ Typing separate lines very quickly.
+<:log_downrightdown:1420807950708113529>__Wall Text:__ Typing out large blocks of text.
+<:log_downrightdown:1420807950708113529>__Chaining:__ Lyrics that make up a song, counting down, etc.
+<:log_downrightdown:1420807950708113529>__Repetitive Messages:__ Posting the same images/emojis multiple times.
+<:log_downright:1420807935608754217>__Epileptic Emotes:__ Posting/reacting with flashy GIFs or Emotes.
 
 **8. Do not Self-Advertise**Don't promote your stuff anywhere in the server and in DMs.
 
@@ -95,14 +95,14 @@ These rules have been made in order to keep the server safe for everyone. Every 
       case "tickets":
         const tickets = new ContainerBuilder()
           .setAccentColor(0x0089de)
+          .addMediaGalleryComponents((mediaGallery) =>
+            mediaGallery.addItems((galleryItem) =>
+              galleryItem.setURL("https://i.imgur.com/mYIItSf.jpeg")
+            )
+          )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
               `## Support Tickets\n\nUse the buttons below the panel to open a support ticket.`
-            )
-          )
-          .addMediaGalleryComponents((mediaGallery) =>
-            mediaGallery.addItems((galleryItem) =>
-              galleryItem.setURL("https://i.imgur.com/ETYtGyT.png")
             )
           )
           .addActionRowComponents((actionRow) =>
@@ -347,7 +347,7 @@ These rules have been made in order to keep the server safe for everyone. Every 
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `**Note:** If you want to remove a role, deselect the role you just did and reselect the role you want removed.`
+              `\n**Note:** If you want to remove a role just select it again in the select menu. If it's already selected from the first time you used it, select it two times and it should be removed.`
             )
           );
 

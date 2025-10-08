@@ -26,6 +26,108 @@ class Tools {
       );
     };
 
+    // adds userinfo gallary (banners, nameplates, avatar decorations)
+    this.gallary = function (user, embed) {
+      if (user.collectibles || user.banner || user.avatarDecorationData) {
+        embed.addTextDisplayComponents((textDisplay) =>
+          textDisplay.setContent(
+            user.banner && user.collectibles && user.avatarDecorationData
+              ? `\n**Nameplate, Banner, & Avatar Decoration**`
+              : user.collectibles && user.banner
+              ? `**Nameplate & Banner**`
+              : user.collectibles && user.avatarDecorationData
+              ? `**Nameplate & Avatar Decoration**`
+              : user.banner && user.avatarDecorationData
+              ? `**Banner & Avatar Decoration**`
+              : user.collectibles
+              ? `**Nameplate**`
+              : user.banner
+              ? `**Banner**`
+              : `**Avatar Decoration**`
+          )
+        );
+        if (user.collectibles && user.banner && user.avatarDecorationData) {
+          embed.addMediaGalleryComponents((mediaGallery) =>
+            mediaGallery.addItems(
+              (galleryItem) =>
+                galleryItem.setURL(
+                  user.bannerURL({ extension: "png", size: 1024 })
+                ),
+              (galleryItem) =>
+                galleryItem.setURL(
+                  `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
+                ),
+              (galleryItem) =>
+                galleryItem.setURL(
+                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
+                )
+            )
+          );
+        } else if (user.banner && user.avatarDecorationData) {
+          embed.addMediaGalleryComponents((mediaGallery) =>
+            mediaGallery.addItems(
+              (galleryItem) =>
+                galleryItem.setURL(
+                  user.bannerURL({ extension: "png", size: 1024 })
+                ),
+              (galleryItem) =>
+                galleryItem.setURL(
+                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
+                )
+            )
+          );
+        } else if (user.collectibles && user.avatarDecorationData) {
+          embed.addMediaGalleryComponents((mediaGallery) =>
+            mediaGallery.addItems(
+              (galleryItem) =>
+                galleryItem.setURL(
+                  `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
+                ),
+              (galleryItem) =>
+                galleryItem.setURL(
+                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
+                )
+            )
+          );
+        }
+      } else if (user.banner && user.collectibles) {
+        embed.addMediaGalleryComponents((mediaGallery) =>
+          mediaGallery.addItems(
+            (galleryItem) =>
+              galleryItem.setURL(
+                user.bannerURL({ extension: "png", size: 1024 })
+              ),
+            (galleryItem) =>
+              galleryItem.setURL(
+                `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}static.png`
+              )
+          )
+        );
+      } else if (user.banner) {
+        embed.addMediaGalleryComponents((mediaGallery) =>
+          mediaGallery.addItems((galleryItem) =>
+            galleryItem.setURL(user.bannerURL({ extension: "png", size: 1024 }))
+          )
+        );
+      } else if (user.collectibles) {
+        embed.addMediaGalleryComponents((mediaGallery) =>
+          mediaGallery.addItems((galleryItem) =>
+            galleryItem.setURL(
+              `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
+            )
+          )
+        );
+      } else if (user.avatarDecorationData) {
+        embed.addMediaGalleryComponents((mediaGallery) =>
+          mediaGallery.addItems((galleryItem) =>
+            galleryItem.setURL(
+              `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
+            )
+          )
+        );
+      }
+    };
+
     // is in developer list
     this.isDev = function (user = int.user) {
       return config.developer_ids.includes(user?.id);

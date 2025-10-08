@@ -338,7 +338,7 @@ module.exports = class Ticketing {
                 }\n**Issue:** "${recipientThread.issue}"\n**Reason:** ${input}`
               )
             )
-            .setAccentColor(0x0598f7);
+            .setAccentColor(0x3665bb);
 
           modalInteraction.client.channels.cache
             .get(modalInteraction.client.config.log)
@@ -378,7 +378,7 @@ module.exports = class Ticketing {
           }"\n**Reason:** Closed without reason`
         )
       )
-      .setAccentColor(0x0598f7);
+      .setAccentColor(0x3665bb);
 
     interaction.client.channels.cache
       .get(interaction.client.config.log)

@@ -30,6 +30,7 @@ module.exports = async (client, interaction) => {
     }
 
     if (interaction.customId.startsWith("configmenu_")) {
+      let tools = new Tools(client, interaction);
       if (interaction.customId.split("_")[1] != interaction.user.id)
         return interaction.deferUpdate();
       let configData = interaction.values[0].split("_").slice(1);
@@ -39,19 +40,20 @@ module.exports = async (client, interaction) => {
           : "button:settings_view";
       client.commands
         .get(configCmd)
-        .run(client, interaction, new Tools(client, interaction), configData);
+        .run(client, interaction, tools, configData);
     }
     return;
   }
 
   // also for setting changes
   else if (interaction.isModalSubmit()) {
+    let tools = new Tools(client, interaction);
     if (interaction.customId.startsWith("configmodal")) {
       let modalData = interaction.customId.split("~");
       if (modalData[2] != interaction.user.id) return interaction.deferUpdate();
       client.commands
         .get("button:settings_edit")
-        .run(client, interaction, new Tools(client, interaction), modalData[1]);
+        .run(client, interaction, tools, modalData[1]);
     }
     return;
   }
@@ -76,6 +78,7 @@ module.exports = async (client, interaction) => {
       });
     }
   } else if (interaction.isButton()) {
+    let tools = new Tools(client, interaction);
     foundCommand = client.commands.get(
       `button:${interaction.customId.split("~")[0]}`
     );
@@ -87,7 +90,7 @@ module.exports = async (client, interaction) => {
       }
 
       try {
-        await foundCommand.run(client, interaction);
+        await foundCommand.run(client, interaction, tools);
       } catch (e) {
         console.error(e);
         interaction.reply({
@@ -105,6 +108,12 @@ module.exports = async (client, interaction) => {
           content: `## You are currently blocked from opening tickets.\n\nReason: ${block.reason}`,
           flags: MessageFlags.Ephemeral,
         });
+
+      if (interaction.customId.includes("_")) {
+        let tools = new Tools(client, interaction);
+        const cmd = client.commands.get(`button:${interaction.customId.split("_")[0]}`);
+        await cmd.run(client, interaction, tools);
+      }
 
       switch (interaction.customId) {
         case "verify":

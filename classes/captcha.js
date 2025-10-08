@@ -62,7 +62,7 @@ module.exports = class Captcha {
           return modalInteraction
             .reply({
               content: `${modalInteraction.client.config.emojis.redTick} Invalid captcha code. Try again.`,
-              flags: Message,
+              flags: MessageFlags.Ephemeral,
             })
             .catch(() => {});
 
