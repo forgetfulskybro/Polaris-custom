@@ -49,12 +49,10 @@ module.exports = {
         let tag;
         if (user.primaryGuild && user.primaryGuild.identityEnabled) {
           const identity = user.primaryGuild;
-          tag = await modalInteraction.guild.emojis
-            .create({
-              attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
-              name: "tempTag",
-            })
-            .catch(() => null);
+          tag = await client.application.emojis.create({
+            name: "tempTag",
+            attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
+          });
         }
 
         const embed = new ContainerBuilder().addSectionComponents((sect) =>
@@ -109,10 +107,7 @@ module.exports = {
           })
           .then(async () => {
             if (tag)
-              await modalInteraction.guild.emojis.delete(
-                tag,
-                "Emoji was used for userinfo command"
-              );
+               client.application.emojis.delete(tag.id);
           });
       });
   },
