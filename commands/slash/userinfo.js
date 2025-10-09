@@ -1,5 +1,7 @@
+const { ContainerBuilder, MessageFlags, Routes } = require("discord.js");
 const { ButtonBuilder } = require("@discordjs/builders");
-const { ContainerBuilder, MessageFlags } = require("discord.js");
+const { REST } = require("@discordjs/rest");
+const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 module.exports = {
   metadata: {
     dev: true,
@@ -26,12 +28,10 @@ module.exports = {
     let tag;
     if (user.primaryGuild && user.primaryGuild.identityEnabled) {
       const identity = user.primaryGuild;
-      tag = await interaction.guild.emojis
-        .create({
-          attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
-          name: "tempTag",
-        })
-        .catch(() => null);
+      tag = await client.application.emojis.create({
+        name: "tempTag",
+        attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
+      });
     }
 
     const embed = new ContainerBuilder().addSectionComponents((sect) =>
@@ -90,10 +90,7 @@ module.exports = {
       })
       .then(async () => {
         if (tag)
-          await interaction.guild.emojis.delete(
-            tag,
-            "Emoji was used for userinfo command"
-          );
+          client.application.emojis.delete(tag.id);
       });
   },
 };
