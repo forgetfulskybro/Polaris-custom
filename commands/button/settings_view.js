@@ -1,3 +1,4 @@
+const Discord = require('discord.js')
 const config = require("../../json/quick_settings.json")
 const schema = require("../../database_schema.js").settingsIDs
 
@@ -60,6 +61,6 @@ async run(client, int, tools, selected) {
         {style: "Primary", label: (setting.type == "bool") ? "Toggle" : "Edit", customId: `settings_edit~${settingID}~${int.user.id}`}
     ])
 
-    tools.editOrReply({embeds: [embed], components: tools.row(buttons)})
+    tools.editOrReply({ embeds: [embed], components: tools.row(buttons), flags: [Discord.MessageFlags.Ephemeral] })
 
 }}

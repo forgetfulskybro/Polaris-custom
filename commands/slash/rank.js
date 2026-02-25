@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const multiplierModes = require("../../json/multiplier_modes.json")
 
 module.exports = {
@@ -102,6 +103,6 @@ async run(client, int, tools) {
     }
 
     let isHidden = db.settings.rankCard.ephemeral || !!int.options.get("hidden")?.value
-    return int.reply({embeds: [embed], ephemeral: isHidden})
+    return int.reply({embeds: [embed], flags: isHidden ? MessageFlags.Ephemeral : []})
 
 }}

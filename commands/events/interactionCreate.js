@@ -100,7 +100,7 @@ module.exports = async (client, interaction) => {
       }
     } else {
       const block = await Blocked.findOne({
-        block: interaction.user.id,
+        id: interaction.user.id,
       });
 
       if (block)
@@ -122,9 +122,8 @@ module.exports = async (client, interaction) => {
         case "captcha":
           await client.captcha.verify(interaction);
           break;
-        case "sky":
-        case "mod":
-          await client.ticket.create(interaction, interaction.customId);
+        case "tickets":
+          await client.ticket.create(interaction);
           break;
         case "close":
         case "closeReason":

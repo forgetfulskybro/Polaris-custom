@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 module.exports = {
 metadata: {
     permission: "ManageGuild",
@@ -60,7 +61,7 @@ async run(client, int, tools) {
     let xpDiff = newXP - xp
 
     client.db.update(int.guild.id, { $set: { [`users.${user.id}.xp`]: newXP } }).then(() => {
-        int.reply(`${newXP > xp ? "⏫" : "⏬"} ${user.displayName} now has **${tools.commafy(newXP)}** XP${newLevel != level ? ` and is **level ${newLevel}**` : ""}! (previously ${tools.commafy(xp)}, ${xpDiff >= 0 ? "+" : ""}${tools.commafy(xpDiff)})`)
+        int.reply({ content: `${newXP > xp ? "⏫" : "⏬"} ${user.displayName} now has **${tools.commafy(newXP)}** XP${newLevel != level ? ` and is **level ${newLevel}**` : ""}! (previously ${tools.commafy(xp)}, ${xpDiff >= 0 ? "+" : ""}${tools.commafy(xpDiff)})`, flags: [MessageFlags.Ephemeral] })
     }).catch(() => tools.warn("Something went wrong while trying to modify XP!"))
 
 }}

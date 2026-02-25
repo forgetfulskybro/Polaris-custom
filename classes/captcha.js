@@ -9,7 +9,7 @@ const captcha = require("../models/captcha.js");
 const crypto = require("node:crypto");
 
 module.exports = class Captcha {
-  randomString(length = 5) {
+  randomString(length = 20) {
     let result = "";
     const characters =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -28,12 +28,25 @@ module.exports = class Captcha {
       custom_id: "checkCaptcha",
       components: [
         {
+          type: 18,
+          label: "Do you agree to the server's rules?",
+          required: true,
+          component: {
+            type: 21,
+            custom_id: "checkbox",
+            options: [
+              { value: "disagree", label: "I disagree" },
+              { value: "agree", label: "I agree" },
+            ],
+          },
+        },
+        {
           type: 1,
           components: [
             {
               type: 4,
               style: 1,
-              max_length: 5,
+              max_length: 20,
               required: true,
               custom_id: "input",
               label: "Code",
@@ -51,35 +64,61 @@ module.exports = class Captcha {
         time: 180000,
       })
       .then(async (modalInteraction) => {
-        let code = modalInteraction.components[0].components[0].value;
+        let rules = modalInteraction.components[0].component.value;
+        let code = modalInteraction.components[1].components[0].value;
+
+        if (rules == "disagree") {
+          await captcha.deleteOne({ user: interaction.user.id });
+
+          return modalInteraction
+            .reply({
+              content: `${interaction.client.config.emojis.redTick} You've been kicked for not agreeing to the server rules.`,
+            })
+            .then(() => {
+              interaction.client.guilds.cache
+                .get(interaction.client.config.mainGuild)
+                .members.kick(
+                  interaction.user.id,
+                  "User did not agree to server rules",
+                );
+            });
+        }
 
         const verifyCaptcha = await captcha.findOne({
           code,
           user: interaction.user.id,
         });
 
-        if (!verifyCaptcha)
+        if (!verifyCaptcha) {
+          await captcha.deleteOne({ user: interaction.user.id });
+
           return modalInteraction
             .reply({
-              content: `${modalInteraction.client.config.emojis.redTick} Invalid captcha code. Try again.`,
-              flags: MessageFlags.Ephemeral,
+              content: `${interaction.client.config.emojis.redTick} That's an invalid captcha code.`,
             })
-            .catch(() => {});
+            // .then(() => {
+            //   interaction.client.guilds.cache
+            //     .get(interaction.client.config.mainGuild)
+            //     .members.kick(
+            //       interaction.user.id,
+            //       "User did not use correct captcha code",
+            //     );
+            // });
+        }
 
-        modalInteraction.client.guilds.cache
-          .get(modalInteraction.client.config.mainGuild)
-          .members.cache.get(modalInteraction.user.id)
-          .roles.add("590931208872132620")
+        interaction.client.guilds.cache
+          ?.get(interaction.client.config.mainGuild)
+          ?.members.cache.get(interaction.user.id)
+          ?.roles.add(interaction.client.config.verificationRole)
           .catch((e) => {
             console.log(e);
           });
 
         await captcha.findOneAndDelete({ code: code });
-        const channel = interaction.client.channels.cache.get(
-          "1219306420818808912"
-        );
+        const channel = interaction.client.channels.cache.get(interaction.client.config.verificationChannel);
+
         let thread = channel.threads.cache.get(
-          interaction.client.config.thread
+          interaction.client.config.thread,
         );
         if (!thread)
           thread = channel.threads
@@ -95,14 +134,11 @@ module.exports = class Captcha {
           .catch((e) => {
             console.log(e);
           });
-      })
-      .catch((e) => {
-        console.log(e);
-      });
+      }).catch(() => {});
   }
 
   async start(interaction) {
-    if (interaction.member.roles.cache.has("590931208872132620"))
+    if (interaction.member.roles.cache.has(interaction.client.config.verificationRole))
       return interaction.deferUpdate();
     const user = await captcha.findOne({ user: interaction.user.id });
     if (user) return interaction.deferUpdate();
@@ -114,20 +150,20 @@ module.exports = class Captcha {
 
     const embed = new ContainerBuilder()
       .setAccentColor(0x0099ff)
-      .addTextDisplayComponents((textDisplay) => 
+      .addTextDisplayComponents((textDisplay) =>
         textDisplay.setContent(
-          `Hello, you're being sent this message to verify your identity with a captcha code. Click the button below and input the code to be verified!\n\n\`${code}\``
-        )
-    )
-      .addSeparatorComponents(separator => separator)
+          `Hello, you're being sent this message to verify your identity with a captcha code. Click the button below and input the code to be verified!\n\n\`${code}\``,
+        ),
+      )
+      .addSeparatorComponents((separator) => separator)
       .addActionRowComponents((actionRow) =>
         actionRow.setComponents(
           new ButtonBuilder()
             .setCustomId("captcha")
             .setLabel("Captcha")
-            .setStyle("Secondary")
-        )
-    );
+            .setStyle("Secondary"),
+        ),
+      );
 
     let dm = false;
     await interaction.user
@@ -160,7 +196,7 @@ module.exports = class Captcha {
         .catch(() => {});
 
       interaction.client.guilds.cache
-        .get("286252263109033984")
+        .get(interaction.client.config.mainGuild)
         .members.kick(interaction.user.id, "User did not complete captcha");
     }, 360000);
 

@@ -40,12 +40,12 @@ module.exports = {
           .unban(userId, reason)
           .catch(() => {});
 
-        const user = await client.users.fetch(userId).catch(() => null);
+        const user = await client.users.fetch(userId, { cache: false, force: true }).catch(() => null);
         let tag;
         if (user.primaryGuild && user.primaryGuild.identityEnabled) {
           const identity = user.primaryGuild;
           tag = await client.application.emojis.create({
-            name: "tempTag",
+            name: `tempTag_${user.id}`,
             attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
           });
         }
@@ -75,7 +75,7 @@ module.exports = {
             )
         );
 
-        tools.gallary(user, embed);
+        await tools.gallery(user, embed);
         embed.setAccentColor(0x3665bb);
         embed.addSeparatorComponents((separator) => separator);
         embed.addActionRowComponents((row) =>

@@ -1,3 +1,4 @@
+const { MessageFlags } = require("discord.js");
 module.exports = {
 metadata: {
     permission: "ManageGuild",
@@ -12,7 +13,7 @@ async run(client, int, tools) {
     if (!tools.canManageServer(int.member, db.settings.manualPerms)) return tools.warn("*notMod")
 
     let polarisSettings = [
-        `**✨ XP enabled: __${settings.enabled ? "Yes!" : "No!"}__**`,
+        `**XP enabled: ${settings.enabled ? "Yes!" : "No!"}**`,
         `**XP per message:** ${settings.gain.min == settings.gain.max ? tools.commafy(settings.gain.min) : `${tools.commafy(settings.gain.min)} - ${tools.commafy(settings.gain.max)}`}`,
         `**XP cooldown:** ${tools.commafy(settings.gain.time)} ${tools.extraS("sec", settings.gain.time)}`,
         `**XP curve:** ${settings.curve[3]}x³ + ${settings.curve[2]}x² + ${settings.curve[1]}x`,
@@ -43,6 +44,7 @@ async run(client, int, tools) {
         {style: "Primary", label: `Channel Multipliers (${settings.multipliers.channels.length})`, customId: "list_multipliers~channels"}
     ])
 
-    return int.reply({embeds: [embed], components: [tools.row(buttons)[0], tools.row(listButtons)[0]]})
+    return int.reply({ embeds: [embed], components: [tools.row(buttons)[0], tools.row(listButtons)[0]], flags: [MessageFlags.Ephemeral] })
 
-}}
+  }
+}

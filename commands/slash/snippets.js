@@ -1,7 +1,9 @@
-const { EmbedBuilder, MessageFlags } = require("discord.js");
+const { MessageFlags, ContainerBuilder, ComponentType } = require("discord.js");
 const Snippet = require("../../models/snippet.js");
 const Message = require("../../models/message.js");
 const Thread = require("../../models/thread.js");
+const { StringSelectMenuBuilder } = require("discord.js");
+
 module.exports = {
   metadata: {
     name: "snippets",
@@ -14,9 +16,7 @@ module.exports = {
         description: "Provide which type you want to use for this command.",
         required: true,
         choices: [
-          { name: "Add", value: "add" },
-          { name: "Remove", value: "remove" },
-          { name: "View", value: "view" },
+          { name: "Settings", value: "settings" },
           { name: "Send", value: "send" },
         ],
       },
@@ -24,400 +24,195 @@ module.exports = {
   },
 
   async run(client, interaction, tools) {
-    // Don't hurt me for this code. It's kind of old but works so I don't care enough to change it. I can really relate to the Polaris bot as its code is horrendous lol
-    if (!interaction.guild)
-      return interaction.reply({
-        flags: MessageFlags.Ephemeral,
-        content: `${client.config.emojis.redTick} You have to be in a channel to run this command!`,
-      });
     if (!interaction.member.roles.cache.has(client.config.moderator))
       return interaction.reply({
         flags: MessageFlags.Ephemeral,
-        content: `${client.config.emojis.redTick} You must be apart of our support team to access this command!`,
+        content: `${client.config.emojis.redTick} Unauthorized to use this command.`,
       });
-    switch (interaction.options._hoistedOptions[0].value) {
-      case "send": {
-        const modalObject = {
-          title: "Send a Snippet Message",
-          custom_id: "modal",
-          components: [
-            {
-              type: 1,
-              components: [
-                {
-                  type: 4,
-                  style: 1,
-                  required: true,
-                  custom_id: "input",
-                  label: "Snippet Keyword",
-                  placeholder:
-                    "Provide a snippet keyword to be sent in this thread.",
-                },
-              ],
-            },
-          ],
-        };
 
-        interaction.showModal(modalObject);
-        interaction
-          .awaitModalSubmit({
-            filter: (mInter) => mInter.customId === modalObject.custom_id,
-            time: 180000,
-          })
-          .then(async (modalInteraction) => {
-            let input =
-              modalInteraction.components[0].components[0].value.toLowerCase();
-            const recipientThread = await Thread.findOne({
-              channel: interaction.channel.id,
-              closed: false,
-            });
-
-            if (!recipientThread)
-              return modalInteraction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: `${client.config.emojis.redTick} There's no concurring thread in this channel!`,
-              });
-
-            let type;
-            if (interaction.member.roles.cache.has(client.config.management)) {
-              type = "Management";
-            } else if (
-              interaction.member.roles.cache.has(client.config.moderator)
-            ) {
-              type = "Support";
-            }
-
-            const snipp = await Snippet.findOneAndDelete({
-              keyword: input,
-            });
-
-            if (!snipp)
-              return modalInteraction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: `${client.config.emojis.redTick} Snippet \`${input}\` doesn't exist!`,
-              });
-
-            const messageID =
-              (await Message.countDocuments({
-                thread: recipientThread.id,
-              })) + 1;
-
-            await new Message({
-              thread: recipientThread.id,
-              message: messageID,
-              recipient: modalInteraction.user.username,
-              channel: interaction.channel.id,
-              content: snipp.content,
-              author: modalInteraction.user.id,
-              attachments: [],
-              timestamp: Date.now(),
-            }).save();
-
-            modalInteraction.reply({ content: snipp.content }).catch(() => {});
-          })
-          .catch(() => {});
+    switch (interaction.options.getString("type")) {
+      case "settings":
+        tools.snippetEmbed(interaction);
         break;
-      }
-      case "add": {
-        const modalObject = {
-          title: "Creating Snippet",
-          custom_id: "modal",
-          components: [
-            {
-              type: 1,
-              components: [
-                {
-                  type: 4,
-                  style: 1,
-                  min_length: 2,
-                  max_length: 50,
-                  required: true,
-                  custom_id: "input",
-                  label: "Name",
-                  placeholder: "Add text to be the name of the snippet.",
-                },
-              ],
-            },
-            {
-              type: 1,
-              components: [
-                {
-                  type: 4,
-                  style: 2,
-                  min_length: 10,
-                  max_length: 2000,
-                  required: true,
-                  custom_id: "input2",
-                  label: "Description",
-                  placeholder:
-                    "Add text to be the description for this snippet.",
-                },
-              ],
-            },
-          ],
-        };
+      case "send":
+        const ITEMS_PER_PAGE = 23;
+        const snippets = await Snippet.find();
+        const totalItems = snippets.length;
+        const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) - 1;
+        let currentPage = 0;
 
-        interaction.showModal(modalObject);
-        interaction
-          .awaitModalSubmit({
-            filter: (mInter) => mInter.customId === modalObject.custom_id,
-            time: 180000,
-          })
-          .then(async (modalInteraction) => {
-            let input =
-              modalInteraction.components[0].components[0].value.toLowerCase();
-            let input2 = modalInteraction.components[1].components[0].value;
+        function generateSelectMenu(page = 0) {
+          const start = page * ITEMS_PER_PAGE;
+          const end = start + ITEMS_PER_PAGE;
+          const pageItems = snippets.slice(start, end);
+          const options = [];
 
-            const snipp = await Snippet.findOne({
-              keyword: input,
+          pageItems.forEach((snip, index) => {
+            const globalIndex = start + index + 1;
+            options.push({
+              label: `${globalIndex}. ${snip.keyword}`.slice(0, 100),
+              value: snip.id,
+              description: snip.content?.slice(0, 100) || undefined,
             });
-            if (snipp)
-              return modalInteraction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: `${client.config.emojis.redTick} A snippet with name \`${input}\` already exists!`,
-              });
+          });
 
-            modalInteraction.reply({
-              flags: MessageFlags.Ephemeral,
-              content: `${client.config.emojis.greenTick} Successfully created snippet \`${input}\`!`,
-            });
+          const hasPrevious = page > 0;
+          const hasNext = end < totalItems;
 
-            await new Snippet({
-              keyword: input,
-              content: input2,
-            }).save();
-          })
-          .catch(() => {});
-        break;
-      }
+          options.unshift({
+            label: "← Previous Page",
+            value: "previous",
+            default: false,
+            disabled: !hasPrevious,
+          });
 
-      case "view": {
-        class Paginator {
-          constructor(
-            pages = [],
-            { filter, timeout } = {
-              timeout: 5 * 6e4,
-            }
-          ) {
-            this.pages = Array.isArray(pages) ? pages : [];
-            this.timeout = Number(timeout) || 5 * 6e4;
-            this.page = 0;
-          }
+          options.push({
+            label: "Next Page →",
+            value: "next",
+            disabled: !hasNext,
+          });
 
-          add(page) {
-            this.pages.push(page);
-            return this;
-          }
-
-          setEndPage(page) {
-            if (page) this.endPage = page;
-            return this;
-          }
-
-          setTransform(fn) {
-            const _pages = [];
-            let i = 0;
-            const ln = this.pages.length;
-            for (const page of this.pages) {
-              _pages.push(fn(page, i, ln));
-              i++;
-            }
-            this.pages = _pages;
-            return this;
-          }
-
-          async start(channel, buttons) {
-            if (!this.pages.length) return;
-            const msg = await channel.reply({
-              embeds: [this.pages[0]],
-              components: [buttons],
-              flags: MessageFlags.Ephemeral,
-            });
-            const collector = msg.createMessageComponentCollector();
-
-            collector.on("collect", async (inter) => {
-              try {
-                if (inter.isButton()) {
-                  if (!inter) return;
-
-                  switch (inter.customId) {
-                    case "first":
-                      if (this.page === 0) {
-                        return await inter.reply({
-                          flags: MessageFlags.Ephemeral,
-                          content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
-                        });
-                      } else {
-                        await inter.update({
-                          embeds: [this.pages[0]],
-                          flags: MessageFlags.Ephemeral,
-                        });
-                        return (this.page = 0);
-                      }
-                    case "prev":
-                      if (this.pages[this.page - 1]) {
-                        return await inter.update({
-                          embeds: [this.pages[--this.page]],
-                          flags: MessageFlags.Ephemeral,
-                        });
-                      } else {
-                        return await inter.reply({
-                          flags: MessageFlags.Ephemeral,
-                          content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
-                        });
-                      }
-                    case "next":
-                      if (this.pages[this.page + 1]) {
-                        return await inter.update({
-                          embeds: [this.pages[++this.page]],
-                          flags: MessageFlags.Ephemeral,
-                        });
-                      } else {
-                        return await inter.reply({
-                          flags: MessageFlags.Ephemeral,
-                          content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
-                        });
-                      }
-                    case "last":
-                      if (this.page === this.pages.length - 1) {
-                        return await inter.reply({
-                          flags: MessageFlags.Ephemeral,
-                          content: `${client.config.emojis.redTick} You can't procceed that way anymore!`,
-                        });
-                      } else {
-                        await inter.update({
-                          embeds: [this.pages[this.pages.length - 1]],
-                          flags: MessageFlags.Ephemeral,
-                        });
-                        return (this.page = this.pages.length - 1);
-                      }
-                  }
-                }
-              } catch (e) {
-                return;
-              }
-            });
-          }
+          return [
+            new ContainerBuilder()
+              .addTextDisplayComponents((text) =>
+                text.setContent(
+                  `## Snippet Selector - Page ${page + 1} / ${maxPage + 1}`,
+                ),
+              )
+              .addSeparatorComponents((separator) => separator)
+              .addTextDisplayComponents((text) =>
+                text.setContent(
+                  "Pick a snippet to send\n-# Choose a snippet to send (or change page)",
+                ),
+              )
+              .addActionRowComponents((actionrow) =>
+                actionrow.addComponents(
+                  new StringSelectMenuBuilder()
+                    .setCustomId("snippet_selector")
+                    .setPlaceholder("Choose a snippet to send (or change page)")
+                    .addOptions(options),
+                ),
+              ),
+          ];
         }
 
-        const snipp = await Snippet.find();
-        if (snipp.length === 0)
-          return interaction.reply({
-            flags: MessageFlags.Ephemeral,
-            content: `${client.config.emojis.redTick} There's currently no snippets to be displayed! You can create some by using \`/snippets add\``,
-          });
-        const page = new Paginator([], {});
-
-        let data;
-        data = snipp.map(
-          (s, i) =>
-            `**Name**: ${s.keyword}\n**Desc**: ${s.content.slice(0, 1000)}`
-        );
-        data = Array.from(
-          {
-            length: Math.ceil(data.length / 3),
-          },
-          (a, r) => data.slice(r * 3, r * 3 + 3)
-        );
-
-        Math.ceil(data.length / 3);
-        data = data.map((e) =>
-          page.add(
-            new EmbedBuilder()
-              .setTitle("Viewing Snippets")
-              .setDescription(`${e.slice(0, 3).join("\n\n").toString()}`)
-          )
-        );
-
-        page.setTransform((embed, index, total) =>
-          embed.setFooter({
-            text: `ForGetFul Support | Page ${index + 1} / ${total}`,
-            iconURL: client.user.avatarURL(),
+        let embed = generateSelectMenu(currentPage);
+        let msg = await interaction
+          .reply({
+            components: embed,
+            flags: [MessageFlags.IsComponentsV2, MessageFlags.Ephemeral],
           })
-        );
+          .catch((e) => console.log(e));
 
-        const buttons = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("first")
-            .setLabel("⏪")
-            .setStyle("Primary"),
-          new ButtonBuilder()
-            .setCustomId("prev")
-            .setLabel("◀️")
-            .setStyle("Success"),
-          new ButtonBuilder()
-            .setCustomId("next")
-            .setLabel("▶️")
-            .setStyle("Success"),
-          new ButtonBuilder()
-            .setCustomId("last")
-            .setLabel("⏩")
-            .setStyle("Primary")
-        );
+        let collector = msg.createMessageComponentCollector({
+          componentType: ComponentType.StringSelect,
+          time: 1_000_000,
+        });
 
-        page.start(interaction, buttons);
+        collector.on("collect", async (int) => {
+          if (int.customId === "snippet_selector") {
+            const input = int.values[0];
 
-        break;
-      }
+            switch (input) {
+              case "previous":
+                if (currentPage === 0) return int.deferUpdate();
+                currentPage = Math.max(0, currentPage - 1);
+                const newEmbed = generateSelectMenu(currentPage);
+                await int
+                  .update({
+                    components: newEmbed,
+                    flags: [
+                      MessageFlags.IsComponentsV2,
+                      MessageFlags.Ephemeral,
+                    ],
+                  })
+                  .catch((e) => console.log(e));
 
-      case "remove": {
-        if (!interaction.member.roles.cache.has(client.config.management))
-          return interaction.reply({
-            flags: MessageFlags.Ephemeral,
-            content: `${client.config.emojis.redTick} You must be a developer to use this sub-command! Contact one if you need a snippet deleted.`,
-          });
+                break;
+              case "next":
+                if (currentPage === maxPage) return int.deferUpdate();
+                currentPage = Math.min(maxPage, currentPage + 1);
+                const newEmbed1 = generateSelectMenu(currentPage);
+                await int
+                  .update({
+                    components: newEmbed1,
+                    flags: [
+                      MessageFlags.IsComponentsV2,
+                      MessageFlags.Ephemeral,
+                    ],
+                  })
+                  .catch((e) => console.log(e));
 
-        const modalObject = {
-          title: "Creating Snippet",
-          custom_id: "modal",
-          components: [
-            {
-              type: 1,
-              components: [
-                {
-                  type: 4,
-                  style: 1,
-                  min_length: 2,
-                  max_length: 35,
-                  required: true,
-                  custom_id: "input",
-                  label: "Name",
-                  placeholder: "Provide which snippet you want to use.",
-                },
-              ],
-            },
-          ],
-        };
+                break;
+              default:
+                const snippet = await Snippet.findOne({ id: input });
+                if (!snippet)
+                  return int.update({
+                    components: [
+                      new ContainerBuilder().addTextDisplayComponents((text) =>
+                        text.setContent(`Snippet not found!`),
+                      ),
+                    ],
+                    flags: [
+                      MessageFlags.Ephemeral,
+                      MessageFlags.IsComponentsV2,
+                    ],
+                  });
 
-        interaction.showModal(modalObject);
-        interaction
-          .awaitModalSubmit({
-            filter: (mInter) => mInter.customId === modalObject.custom_id,
-            time: 180000,
-          })
-          .then(async (modalInteraction) => {
-            let input =
-              modalInteraction.components[0].components[0].value.toLowerCase();
+                await int.channel.send({
+                  components: [
+                    new ContainerBuilder()
+                      .addTextDisplayComponents((text) =>
+                        text.setContent(`# ${snippet.keyword}`),
+                      )
+                      .addSeparatorComponents((separator) => separator)
+                      .addTextDisplayComponents((text) =>
+                        text.setContent(snippet.content),
+                      ),
+                  ],
+                  flags: [MessageFlags.IsComponentsV2],
+                });
 
-            const snipp = await Snippet.findOneAndDelete({
-              keyword: input,
-            });
-            if (!snipp)
-              return modalInteraction.reply({
-                flags: MessageFlags.Ephemeral,
-                content: `${client.config.emojis.redTick} Snippet \`${input}\` doesn't exist to delete!`,
-              });
+                const Thread = await Thread.findOne({
+                  channel: interaction.channel.id,
+                  closed: false,
+                });
+                
+                if (Thread) {
+                  const messageID =
+                    (await Message.countDocuments({
+                      thread: Thread.id,
+                    })) + 1;
 
-            modalInteraction.reply({
-              flags: MessageFlags.Ephemeral,
-              content: `${client.config.emojis.greenTick} Successfully deleted snippet \`${input}\`!`,
-            });
-          })
-          .catch(() => {
-            return;
-          });
-        break;
-      }
+                  await new Message({
+                    thread: Thread.id,
+                    message: messageID,
+                    recipient: interaction.user.username,
+                    channel: interaction.channel.id,
+                    content: `## ${snippet.keyword}\n\n${snippet.content}`,
+                    author: interaction.user.id,
+                    attachments: [],
+                    timestamp: Date.now(),
+                  }).save();
+                }
+
+                int.update({
+                  components: [
+                    new ContainerBuilder().addTextDisplayComponents((text) =>
+                      text.setContent(`Snippet sent!`),
+                    ),
+                  ],
+                  flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+                });
+
+                return collector.stop();
+            }
+          }
+        });
+
+        collector.on("end", () => {
+          collector.stop();
+        });
     }
   },
 };

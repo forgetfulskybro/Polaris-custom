@@ -1,7 +1,6 @@
 const Discord = require('discord.js')
 const config = require("../../json/quick_settings.json")
 const schema = require("../../database_schema.js").settingsIDs
-
 const rootFolder = "home"
 
 module.exports = {
@@ -81,5 +80,5 @@ async run(client, int, tools, selected) {
     .setPlaceholder(isHome ? "Choose category..." : "Choose setting...")
     .addOptions(...options)
 
-    tools.editOrReply({ embeds: [embed], components: tools.row(dropdown) }, !buttonData[2])
+    tools.editOrReply({ embeds: [embed], components: tools.row(dropdown), flags: [Discord.MessageFlags.Ephemeral] }, !buttonData[2])
 }}

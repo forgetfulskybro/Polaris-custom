@@ -1,6 +1,8 @@
 const config = require("../config.json");
 const Discord = require("discord.js");
-const { MessageFlags } = require("discord.js");
+const { MessageFlags, ContainerBuilder, ButtonBuilder } = require("discord.js");
+const { Paginator } = require("../classes/Paginator.js");
+const Snippet = require("../models/snippet.js");
 
 // this class contains all sorts of misc functions used around the bot
 
@@ -26,106 +28,217 @@ class Tools {
       );
     };
 
-    // adds userinfo gallary (banners, nameplates, avatar decorations)
-    this.gallary = function (user, embed) {
-      if (user.collectibles || user.banner || user.avatarDecorationData) {
-        embed.addTextDisplayComponents((textDisplay) =>
-          textDisplay.setContent(
-            user.banner && user.collectibles && user.avatarDecorationData
-              ? `\n**Nameplate, Banner, & Avatar Decoration**`
-              : user.collectibles && user.banner
-              ? `**Nameplate & Banner**`
-              : user.collectibles && user.avatarDecorationData
-              ? `**Nameplate & Avatar Decoration**`
-              : user.banner && user.avatarDecorationData
-              ? `**Banner & Avatar Decoration**`
-              : user.collectibles
-              ? `**Nameplate**`
-              : user.banner
-              ? `**Banner**`
-              : `**Avatar Decoration**`
-          )
-        );
-        if (user.collectibles && user.banner && user.avatarDecorationData) {
-          embed.addMediaGalleryComponents((mediaGallery) =>
-            mediaGallery.addItems(
-              (galleryItem) =>
-                galleryItem.setURL(
-                  user.bannerURL({ extension: "png", size: 1024 })
-                ),
-              (galleryItem) =>
-                galleryItem.setURL(
-                  `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
-                ),
-              (galleryItem) =>
-                galleryItem.setURL(
-                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
-                )
-            )
-          );
-        } else if (user.banner && user.avatarDecorationData) {
-          embed.addMediaGalleryComponents((mediaGallery) =>
-            mediaGallery.addItems(
-              (galleryItem) =>
-                galleryItem.setURL(
-                  user.bannerURL({ extension: "png", size: 1024 })
-                ),
-              (galleryItem) =>
-                galleryItem.setURL(
-                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
-                )
-            )
-          );
-        } else if (user.collectibles && user.avatarDecorationData) {
-          embed.addMediaGalleryComponents((mediaGallery) =>
-            mediaGallery.addItems(
-              (galleryItem) =>
-                galleryItem.setURL(
-                  `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
-                ),
-              (galleryItem) =>
-                galleryItem.setURL(
-                  `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
-                )
-            )
+    this.gallery = async function (user, embed) {
+      let japiBanner;
+      let japiError = false;
+      const hasBanner = !!user.banner;
+      const hasNameplate = !!user.collectibles?.nameplate?.asset;
+      const hasAvatarDeco = !!user.avatarDecorationData?.asset;
+
+      if (!hasBanner && !hasNameplate && !hasAvatarDeco) return;
+      if (!hasBanner)
+        japiBanner = await fetch(
+          `https://japi.rest/discord/v1/user/${user.id}/banner?animated=true&size=1024`,
+        ).then((res) => {
+          if (res?.json()) return (japiError = true);
+          else return res.url;
+        });
+
+      const parts = [];
+      if (hasNameplate) parts.push("Nameplate");
+      if (hasBanner || !japiError) parts.push("Banner");
+      if (hasAvatarDeco) parts.push("Avatar Decoration");
+
+      const title = `**${parts.join(", ")}**${parts.length > 1 ? "" : ""}`;
+      embed.addTextDisplayComponents((textDisplay) =>
+        textDisplay.setContent(`\n${title}`),
+      );
+
+      const galleryItems = [];
+      if (hasBanner || !japiError) {
+        if (japiBanner) {
+          galleryItems.push((galleryItem) => galleryItem.setURL(japiBanner));
+        } else {
+          galleryItems.push((galleryItem) =>
+            galleryItem.setURL(
+              user?.bannerURL({ extension: "png", size: 1024 }),
+            ),
           );
         }
-      } else if (user.banner && user.collectibles) {
+      }
+
+      if (hasNameplate) {
+        const asset = user.collectibles.nameplate.asset;
+        const webmUrl = `https://cdn.discordapp.com/assets/collectibles/${asset}asset.webm`;
+        //const pngUrl = `https://cdn.discordapp.com/assets/collectibles/${asset}static.png`;
+        galleryItems.push((galleryItem) => galleryItem.setURL(webmUrl));
+      }
+
+      if (hasAvatarDeco) {
+        const decoUrl = `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=160&passthrough=true`;
+        galleryItems.push((galleryItem) => galleryItem.setURL(decoUrl));
+      }
+
+      if (galleryItems.length > 0) {
         embed.addMediaGalleryComponents((mediaGallery) =>
-          mediaGallery.addItems(
-            (galleryItem) =>
-              galleryItem.setURL(
-                user.bannerURL({ extension: "png", size: 1024 })
-              ),
-            (galleryItem) =>
-              galleryItem.setURL(
-                `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}static.png`
-              )
-          )
-        );
-      } else if (user.banner) {
-        embed.addMediaGalleryComponents((mediaGallery) =>
-          mediaGallery.addItems((galleryItem) =>
-            galleryItem.setURL(user.bannerURL({ extension: "png", size: 1024 }))
-          )
-        );
-      } else if (user.collectibles) {
-        embed.addMediaGalleryComponents((mediaGallery) =>
-          mediaGallery.addItems((galleryItem) =>
-            galleryItem.setURL(
-              `https://cdn.discordapp.com/assets/collectibles/${user.collectibles.nameplate.asset}asset.webm`
-            )
-          )
-        );
-      } else if (user.avatarDecorationData) {
-        embed.addMediaGalleryComponents((mediaGallery) =>
-          mediaGallery.addItems((galleryItem) =>
-            galleryItem.setURL(
-              `https://cdn.discordapp.com/avatar-decoration-presets/${user.avatarDecorationData.asset}.png?size=80&passthrough=true`
-            )
-          )
+          mediaGallery.addItems(...galleryItems),
         );
       }
+    };
+
+    // Snippet Embed
+    this.snippetEmbed = async function (interaction, update = false) {
+      const snipp = await Snippet.find();
+
+      if (snipp.length === 0) {
+        const noneEm = new ContainerBuilder()
+          .addSectionComponents((section) =>
+            section
+              .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# Configuration`),
+              )
+              .setButtonAccessory((button) =>
+                button
+                  .setCustomId(`snippetAdd`)
+                  .setEmoji({ id: "1472704985669042309", name: "addCircle" })
+                  .setStyle("Success"),
+              ),
+          )
+          .addSeparatorComponents((separator) => separator)
+          .addTextDisplayComponents((textDisplay) =>
+            textDisplay.setContent(`Created snippets will show here`),
+          )
+          .addSeparatorComponents((separator) => separator)
+          .addTextDisplayComponents((textDisplay) =>
+            textDisplay.setContent(`Page 1 / 1`),
+          )
+          .addActionRowComponents((actionRow) =>
+            actionRow.addComponents(
+              new ButtonBuilder()
+                .setCustomId("first")
+                .setEmoji({ id: "1472686546384589022", name: "first_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("prev")
+                .setEmoji({ id: "1472686544929296435", name: "left_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("next")
+                .setEmoji({ id: "1472686545696849940", name: "right_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("last")
+                .setEmoji({ id: "1472686953458696265", name: "last_arrow" })
+                .setStyle("Secondary"),
+            ),
+          );
+
+        if (update) {
+          interaction.update({
+            components: [noneEm],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          });
+        } else {
+          return interaction.reply({
+            components: [noneEm],
+            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          });
+        }
+      }
+
+      const page = new Paginator([], {});
+      let data;
+      data =
+        snipp.map((s, i) => {
+          return {
+            keyword: s.keyword,
+            content: s.content,
+            created: s.created,
+            id: s.id,
+          };
+        }) || [];
+      data = Array.from(
+        {
+          length: Math.ceil(data.length / 3),
+        },
+        (a, r) => data.slice(r * 3, r * 3 + 3),
+      );
+
+      Math.ceil((data.length || 0) / 3);
+      data = data.map((e) => {
+        let em = new ContainerBuilder()
+          .addSectionComponents((section) =>
+            section
+              .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`# Configuration`),
+              )
+              .setButtonAccessory((button) =>
+                button
+                  .setCustomId(`snippetAdd`)
+                  .setEmoji({ id: "1472704985669042309", name: "addCircle" })
+                  .setStyle("Success"),
+              ),
+          )
+          .addSeparatorComponents((separator) => separator);
+
+        for (const snip of e.slice(0, 3)) {
+          em.addSectionComponents((section) =>
+            section
+              .addTextDisplayComponents((textDisplay) =>
+                textDisplay.setContent(`**Name**: ${snip.keyword}`),
+              )
+              .setButtonAccessory((button) =>
+                button
+                  .setCustomId(`snippetDelete_${snip.id}`)
+                  .setEmoji({ id: "1472684664069296383", name: "delete" })
+                  .setStyle("Danger"),
+              ),
+          );
+          em.addActionRowComponents((actionRow) =>
+            actionRow.addComponents(
+              new ButtonBuilder()
+                .setCustomId(`snippetEdit_${snip.id}`)
+                .setEmoji({ id: "1472684664886923448", name: "edit" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId(`snippetView_${snip.id}`)
+                .setEmoji({ id: "1472684666128695356", name: "view" })
+                .setStyle("Secondary"),
+            ),
+          ).addSeparatorComponents((separator) => separator);
+        }
+
+        page.add(em);
+      });
+
+      page.setTransform((embed, index, total) =>
+        embed
+          .addTextDisplayComponents((textDisplay) =>
+            textDisplay.setContent(`Page ${index + 1} / ${total}`),
+          )
+          .addActionRowComponents((actionRow) =>
+            actionRow.addComponents(
+              new ButtonBuilder()
+                .setCustomId("first")
+                .setEmoji({ id: "1472686546384589022", name: "first_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("prev")
+                .setEmoji({ id: "1472686544929296435", name: "left_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("next")
+                .setEmoji({ id: "1472686545696849940", name: "right_arrow" })
+                .setStyle("Secondary"),
+              new ButtonBuilder()
+                .setCustomId("last")
+                .setEmoji({ id: "1472686953458696265", name: "last_arrow" })
+                .setStyle("Secondary"),
+            ),
+          ),
+      );
+
+      return await page.start(interaction, update);
     };
 
     // is in developer list
@@ -137,7 +250,7 @@ class Tools {
     this.commandTag = function (cmd) {
       let foundCmd = client.application.commands.cache.find(
         (x) =>
-          x.name == cmd && x.type == Discord.ApplicationCommandType.ChatInput
+          x.name == cmd && x.type == Discord.ApplicationCommandType.ChatInput,
       );
       return foundCmd?.id ? `</${cmd}:${foundCmd.id}>` : `\`/${cmd}\``;
     };
@@ -199,7 +312,7 @@ class Tools {
       if (lvl > settings.maxLevel) lvl = settings.maxLevel;
       let xpRequired = Object.entries(settings.curve).reduce(
         (total, n) => total + n[1] * lvl ** n[0],
-        0
+        0,
       );
       return settings.rounding > 1
         ? settings.rounding * Math.round(xpRequired / settings.rounding)
@@ -217,7 +330,7 @@ class Tools {
       let topRole = levelRoles[0]; // get highest level role
       if (topRole)
         levelRoles = levelRoles.filter(
-          (x) => x.keep || x.level == topRole.level
+          (x) => x.keep || x.level == topRole.level,
         ); // remove the rest of the non-keep roles
 
       return levelRoles;
@@ -230,13 +343,13 @@ class Tools {
       lvl,
       rewards,
       shouldHave,
-      oldLevel
+      oldLevel,
     ) {
       rewards = rewards.filter((x) => allRoles.some((r) => r.id == x.id));
       if (!oldLevel) oldLevel = lvl;
       if (!shouldHave) shouldHave = this.getRolesForLevel(lvl, rewards);
       let currentLevelRoles = rewards.filter((x) =>
-        roles.some((r) => r.id == x.id)
+        roles.some((r) => r.id == x.id),
       );
 
       let correct = [];
@@ -246,7 +359,7 @@ class Tools {
         else if (!x.noSync || (x.noSync && oldLevel < x.level)) missing.push(x);
       });
       let incorrect = currentLevelRoles.filter(
-        (x) => !x.noSync && !shouldHave.some((r) => r.id == x.id)
+        (x) => !x.noSync && !shouldHave.some((r) => r.id == x.id),
       );
 
       return {
@@ -262,7 +375,7 @@ class Tools {
     this.syncLevelRoles = async function (member, list) {
       if (
         !member.guild.members.me.permissions.has(
-          Discord.PermissionFlagsBits.ManageRoles
+          Discord.PermissionFlagsBits.ManageRoles,
         )
       )
         return;
@@ -306,7 +419,7 @@ class Tools {
       }
 
       let roleBoosts = settings.multipliers.roles.filter((x) =>
-        memberRoles.has(x.id)
+        memberRoles.has(x.id),
       );
       let foundRoleBoost;
       if (roleBoosts.length) {
@@ -371,7 +484,7 @@ class Tools {
           case "add":
             obj.multiplier = Math.max(
               0,
-              1 + (obj.role - 1) + (obj.channel - 1)
+              1 + (obj.role - 1) + (obj.channel - 1),
             );
             break; // add (n-1) from each
           default:
@@ -391,8 +504,8 @@ class Tools {
         user.bot
           ? "*noBotXP"
           : user.id != int.user.id
-          ? `${user.displayName} doesn't have any XP yet!`
-          : `You don't have any XP yet!`
+            ? `${user.displayName} doesn't have any XP yet!`
+            : `You don't have any XP yet!`,
       );
     };
 
@@ -406,13 +519,13 @@ class Tools {
         embed.setAuthor(
           typeof options.author == "string"
             ? { name: options.author, iconURL: int.member.displayAvatarURL() }
-            : options.author
+            : options.author,
         );
       if (options.footer)
         embed.setFooter(
           typeof options.footer == "string"
             ? { text: options.footer }
-            : options.footer
+            : options.footer,
         );
       if (options.fields) embed.addFields(options.fields);
       if (options.timestamp) embed.setTimestamp();
@@ -437,7 +550,7 @@ class Tools {
       titleText,
       titleColor,
       cancelText,
-      cancelColor
+      cancelColor,
     ) {
       return this.button([
         {
@@ -474,12 +587,12 @@ class Tools {
     // disables all clickable buttons, optionally hide all except clicked
     this.disableButtons = function (btns, selected) {
       let disabledBtns = btns.map((x) =>
-        x.data.style == Discord.ButtonStyle.Link ? x : x.setDisabled()
+        x.data.style == Discord.ButtonStyle.Link ? x : x.setDisabled(),
       );
       if (selected) {
         selected.deferUpdate();
         disabledBtns = disabledBtns.filter(
-          (x) => x.customId == selected.customId
+          (x) => x.customId == selected.customId,
         );
       }
       return this.row(disabledBtns);
@@ -541,7 +654,7 @@ class Tools {
     // xp is stored as an object, convert to array
     this.xpObjToArray = function (users) {
       return Object.entries(users).map((x) =>
-        Object.assign({ id: x[0] }, x[1])
+        Object.assign({ id: x[0] }, x[1]),
       );
     };
 
@@ -560,7 +673,9 @@ class Tools {
       let channel = isThread ? c.parent : c;
       let isCategory = channel?.type == ChannelType.GuildCategory;
       return {
-        group: isCategory ? channel.position : channel?.parent?.position ?? -1,
+        group: isCategory
+          ? channel.position
+          : (channel?.parent?.position ?? -1),
         section: channel && channel.isVoiceBased() ? 1 : 0,
         position: isCategory ? -1 : channel?.position + (isThread ? 0.5 : 0),
       };
@@ -619,7 +734,7 @@ class Tools {
     this.capitalize = function (str, all) {
       let text = all ? str.split(" ") : [str];
       text = text.map(
-        (x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()
+        (x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase(),
       );
       return text.join(" ");
     };

@@ -2,16 +2,15 @@ const moment = require("moment");
 const Thread = require("../models/thread.js");
 const Message = require("../models/message.js");
 const {
-  EmbedBuilder,
   ButtonBuilder,
-  ActionRowBuilder,
+  ButtonStyle,
   ContainerBuilder,
   MessageFlags,
   TextDisplayBuilder,
 } = require("discord.js");
 
 module.exports = class Ticketing {
-  async create(interaction, type) {
+  async create(interaction) {
     const haveThread = await Thread.findOne({
       recipient: interaction.user.id,
       closed: false,
@@ -27,6 +26,19 @@ module.exports = class Ticketing {
       title: `Creating Ticket`,
       custom_id: "createTicket",
       components: [
+        {
+          type: 18,
+          label: "Who are you trying to contact?",
+          required: true,
+          component: {
+            type: 21,
+            custom_id: "ticket_who",
+            options: [
+              { value: "mod", label: "Moderation" },
+              { value: "sky", label: "Sky | ForGetFul" },
+            ],
+          },
+        },
         {
           type: 1,
           components: [
@@ -45,14 +57,15 @@ module.exports = class Ticketing {
       ],
     };
 
-    interaction.showModal(modalObject).catch(() => {});
+    interaction.showModal(modalObject);
     interaction
       .awaitModalSubmit({
         filter: (mInter) => mInter.customId === modalObject.custom_id,
         time: 180000,
       })
       .then(async (modalInteraction) => {
-        let input = modalInteraction.components[0].components[0].value;
+        let type = modalInteraction.components[0].component.value;
+        let input = modalInteraction.components[1].components[0].value;
 
         const channel = await interaction.client.guilds.cache
           .get(interaction.client.config.mainGuild)
@@ -95,7 +108,7 @@ module.exports = class Ticketing {
         const textComp = new TextDisplayBuilder().setContent(
           type === "sky"
             ? `<@268843733317976066> <@${modalInteraction.user.id}>`
-            : `<@&398965932418138125> <@${modalInteraction.user.id}>`
+            : `<@&398965932418138125> <@${modalInteraction.user.id}>`,
         );
 
         const infoEmbed = new ContainerBuilder()
@@ -104,9 +117,9 @@ module.exports = class Ticketing {
               `**${
                 modalInteraction.user.username
               }** has opened a ticket.\nAccount was created <t:${Math.floor(
-                interaction.user.createdTimestamp / 1000
-              )}>.\n\n**Issue:** ${input}\n**Type:** ${type}`
-            )
+                interaction.user.createdTimestamp / 1000,
+              )}>.\n\n**Issue:** ${input}\n**Type:** ${type}`,
+            ),
           )
           .addSeparatorComponents((separator) => separator)
           .addActionRowComponents((actionRow) =>
@@ -126,8 +139,8 @@ module.exports = class Ticketing {
               new ButtonBuilder()
                 .setCustomId("removeUser")
                 .setLabel("Remove User")
-                .setStyle("Secondary")
-            )
+                .setStyle("Secondary"),
+            ),
           )
           .setAccentColor(0x0089de);
 
@@ -152,14 +165,8 @@ module.exports = class Ticketing {
           timestamp: Date.now(),
         }).save();
 
-        modalInteraction
-          .reply({
-            content: `Successfully created a ticket.`,
-            flags: MessageFlags.Ephemeral,
-          })
-          .catch(() => {});
-      })
-      .catch(() => {});
+        modalInteraction.deferUpdate();
+      });
     return;
   }
 
@@ -208,8 +215,8 @@ module.exports = class Ticketing {
           `**${interaction.user.username}** opened a ticket for ${
             data.user.username
           }.\nAccount was created <t:${Math.floor(
-            data.user.createdTimestamp / 1000
-          )}>.\n\n**Issue:** ${data.issue}`
+            data.user.createdTimestamp / 1000,
+          )}>.\n\n**Issue:** ${data.issue}`,
         );
       })
       .addActionRowComponents((actionRow) => {
@@ -229,7 +236,7 @@ module.exports = class Ticketing {
           new ButtonBuilder()
             .setCustomId("removeUser")
             .setLabel("Remove User")
-            .setStyle("Secondary")
+            .setStyle("Secondary"),
         );
       })
       .setAccentColor(0x0089de);
@@ -329,14 +336,22 @@ module.exports = class Ticketing {
                   interaction.user.username
                 }**\n\n**Recipient:** <@${recipientThread.recipient}> (${
                   recipientThread.recipient
-                })\n**Contact:** ${
-                  recipientThread.contact
+                })\n**Contact:** ${recipientThread.contact} | **Thread ID:** #${
+                  recipientThread.id
                 }\n**Time Lasted:** ${moment(recipientThread.timestamp)
                   .from(Date.now())
                   .replace("ago", "")}\n**Thread ID:** #${
                   recipientThread.id
-                }\n**Issue:** "${recipientThread.issue}"\n**Reason:** ${input}`
-              )
+                }\n**Issue:** "${recipientThread.issue}"\n**Reason:** ${input}`,
+              ),
+            )
+            .addActionRowComponents((actionRow) =>
+              actionRow.addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`ticketing-logs_${recipientThread.id}`)
+                  .setLabel("Logs")
+                  .setStyle(ButtonStyle.Primary),
+              ),
             )
             .setAccentColor(0x3665bb);
 
@@ -346,17 +361,13 @@ module.exports = class Ticketing {
             .catch(() => {});
           recipientThread.closed = true;
           await recipientThread.save();
-
-          await modalInteraction.reply({
-            flags: MessageFlags.Ephemeral,
-            content: "Done.",
-          });
+          await modalInteraction.deferUpdate();
 
           return await modalInteraction.channel.delete({
-            reason: `${modalInteraction.user.username}: Deleting ticket chnanel.`,
+            reason: `${modalInteraction.user.username}: Deleting ticket channel.`,
           });
-        })
-        .catch(() => {});
+        });
+
       return;
     }
 
@@ -367,33 +378,35 @@ module.exports = class Ticketing {
             interaction.user.username
           }**\n\n**Recipient:** <@${recipientThread.recipient}> (${
             recipientThread.recipient
-          })\n**Contact:** ${
-            recipientThread.contact
+          })\n**Contact:** ${recipientThread.contact} | **Thread ID:** #${
+            recipientThread.id
           }\n**Time Lasted:** ${moment(recipientThread.timestamp)
             .from(Date.now())
-            .replace("ago", "")}\n**Thread ID:** #${
-            recipientThread.id
-          }\n**Issue:** "${
+            .replace("ago", "")}\n**Issue:** "${
             recipientThread.issue
-          }"\n**Reason:** Closed without reason`
-        )
+          }"\n**Reason:** Closed without reason`,
+        ),
+      )
+      .addActionRowComponents((actionRow) =>
+        actionRow.addComponents(
+          new ButtonBuilder()
+            .setCustomId(`ticketing-logs_${recipientThread.id}`)
+            .setLabel("Logs")
+            .setStyle(ButtonStyle.Primary),
+        ),
       )
       .setAccentColor(0x3665bb);
 
     interaction.client.channels.cache
       .get(interaction.client.config.log)
-      .send({ components: [embed] })
+      .send({ components: [embed], flags: MessageFlags.IsComponentsV2 })
       .catch(() => {});
     recipientThread.closed = true;
     await recipientThread.save();
 
-    await interaction.channel
-      .delete({
-        reason: `${interaction.user.username}: Deleting ticket chnanel.`,
-      })
-      .catch(() => {
-        return;
-      });
+    await interaction.channel.delete({
+      reason: `${interaction.user.username}: Deleting ticket channel.`,
+    });
   }
 
   async message(message) {
@@ -442,18 +455,14 @@ module.exports = class Ticketing {
       custom_id: "addUser",
       components: [
         {
-          type: 1,
-          components: [
-            {
-              type: 4,
-              style: 1,
-              max_length: 20,
-              required: true,
-              custom_id: "input",
-              label: "User",
-              placeholder: `Why are you adding this user?`,
-            },
-          ],
+          type: 18,
+          label: "Add users to this ticket",
+          component: {
+            type: 5,
+            custom_id: "user_selected",
+            max_values: 5,
+            required: true,
+          },
         },
       ],
     };
@@ -465,23 +474,26 @@ module.exports = class Ticketing {
         time: 180000,
       })
       .then(async (modalInteraction) => {
-        const input = modalInteraction.components[0].components[0].value;
-        if (!interaction.guild.members.cache.has(input))
-          return modalInteraction.reply({
-            content: `Error! Could not find user in this server. Mention the user and try again!`,
-            flags: MessageFlags.Ephemeral,
-          });
-        if (interaction.channel.members.has(input))
-          return modalInteraction.reply({
-            content: `Error! User is already in this channel!`,
-            flags: MessageFlags.Ephemeral,
-          });
+        const input = modalInteraction.components[0].component.values;
+        let usersInChannel = [];
+        let success = [];
 
-        await interaction.client.channels.cache
-          .get(interaction.channel.id)
-          .permissionOverwrites.edit(input, { ViewChannel: true });
+        for (const user of input) {
+          if (modalInteraction.channel.members.has(user))
+            usersInChannel.push(user);
+        }
+
+        for (const user of input.filter((u) => !usersInChannel.includes(u))) {
+          await interaction.client.channels.cache
+            .get(interaction.channel.id)
+            .permissionOverwrites.edit(user, { ViewChannel: true })
+            .then(() => {
+              success.push(user);
+            });
+        }
+
         modalInteraction.reply({
-          content: `Successfully added <@${input}> to this ticket.`,
+          content: `${success.length > 0 ? `Successfully added ${success.map((user) => `<@${user}>`).join(", ")} to this ticket.` : ""}${usersInChannel.length > 0 ? `\n${usersInChannel.map((user) => `<@${user}>`).join(", ")} are already in this ticket.` : ""}`,
           flags: MessageFlags.Ephemeral,
         });
       })
@@ -507,18 +519,14 @@ module.exports = class Ticketing {
       custom_id: "removeUser",
       components: [
         {
-          type: 1,
-          components: [
-            {
-              type: 4,
-              style: 1,
-              max_length: 20,
-              required: true,
-              custom_id: "input",
-              label: "User",
-              placeholder: `Why are you removing this user?`,
-            },
-          ],
+          type: 18,
+          label: "Choose users to remove from the ticket",
+          component: {
+            type: 5,
+            custom_id: "user_selected",
+            max_values: 5,
+            required: true,
+          },
         },
       ],
     };
@@ -530,23 +538,28 @@ module.exports = class Ticketing {
         time: 180000,
       })
       .then(async (modalInteraction) => {
-        const input = modalInteraction.components[0].components[0].value;
-        if (!interaction.guild.members.cache.has(input))
-          return modalInteraction.reply({
-            content: `Error! Could not find user in this server. Mention the user and try again!`,
-            flags: MessageFlags.Ephemeral,
-          });
-        if (!interaction.channel.members.has(input))
-          return modalInteraction.reply({
-            content: `Error! Could not find user in this channel to remove!`,
-            flags: MessageFlags.Ephemeral,
-          });
+        const input = modalInteraction.components[0].component.values;
+        let usersNotInChannel = [];
+        let success = [];
 
-        await interaction.client.channels.cache
-          .get(interaction.channel.id)
-          .permissionOverwrites.delete(input);
+        for (const user of input) {
+          if (!modalInteraction.channel.members.has(user))
+            usersNotInChannel.push(user);
+        }
+
+        for (const user of input.filter(
+          (u) => !usersNotInChannel.includes(u),
+        )) {
+          await interaction.client.channels.cache
+            .get(interaction.channel.id)
+            .permissionOverwrites.delete(user)
+            .then(() => {
+              success.push(user);
+            });
+        }
+
         modalInteraction.reply({
-          content: `Successfully removed <@${input}> from this ticket.`,
+          content: `${success.length > 0 ? `Successfully removed ${success.map((user) => `<@${user}>`).join(", ")} from this ticket.` : ""}${usersNotInChannel.length > 0 ? `\n${usersNotInChannel.map((user) => `<@${user}>`).join(", ")} aren't in this ticket.` : ""}`,
           flags: MessageFlags.Ephemeral,
         });
       })

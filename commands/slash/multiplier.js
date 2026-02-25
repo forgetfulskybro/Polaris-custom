@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 module.exports = {
 metadata: {
     permission: "ManageGuild",
@@ -51,7 +52,7 @@ async run(client, int, tools) {
         ])
 
         client.db.update(int.guild.id, { $set: { [`settings.multipliers.${typeIndex}`]: newList[typeIndex], 'info.lastUpdate': Date.now() }}).then(() => {
-            return int.reply({ content: msg, components: viewMultipliers })        
+            return int.reply({ content: msg, components: viewMultipliers, flags: [MessageFlags.Ephemeral] })        
         })
     }
 

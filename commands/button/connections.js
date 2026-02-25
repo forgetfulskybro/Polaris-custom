@@ -24,6 +24,7 @@ const emojis = {
   bungie: "<:bungie:1422014892973625364>",
   bluesky: "<:bluesky:1422014883515334656>",
   battlenet: "<:battlenet:1422014873419649055>",
+  roblox: "<:roblox:1476246084350246954>",
 };
 
 module.exports = {
@@ -36,12 +37,12 @@ module.exports = {
     const userId = int.customId.split("_")[1];
 
     const connections = await fetch(
-      `https://japi.rest/discord/v1/user/${userId}/connections`
+      `https://japi.rest/discord/v1/user/${userId}/connections`,
     )
       .then((res) => res.json())
-      .catch(() => int.deferUpdate());
-    if (!connections || !connections.data || connections.data.error)
-      return int.deferUpdate();
+      .catch(() => {return});
+    if (connections.data.length == 0 || !connections || !connections.data || connections.data.error)
+      return;
 
     const groupedConnections = connections.data.reduce((acc, conn) => {
       if (!acc[conn.type]) {
@@ -51,12 +52,12 @@ module.exports = {
       return acc;
     }, {});
 
-    const user = await client.users.fetch(userId).catch(() => null);
+    const user = await client.users.fetch(userId, { cache: false, force: true }).catch(() => null);
     let tag;
     if (user.primaryGuild && user.primaryGuild.identityEnabled) {
       const identity = user.primaryGuild;
       tag = await client.application.emojis.create({
-        name: "tempTag",
+        name: `tempTag_${user.id}`,
         attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
       });
     }
@@ -72,25 +73,25 @@ module.exports = {
             }\n**ID:** ${user.id}\n**Bot:** ${
               user.bot ? "Yes" : "No"
             }\n**Created:** <t:${Math.floor(
-              user.createdTimestamp / 1000
-            )}:F> (<t:${Math.floor(user.createdTimestamp / 1000)}:R>)\n`
-          )
+              user.createdTimestamp / 1000,
+            )}:F> (<t:${Math.floor(user.createdTimestamp / 1000)}:R>)\n`,
+          ),
         )
         .setThumbnailAccessory((thumb) =>
           thumb.setURL(
             user.displayAvatarURL({ extension: "png", size: 1024 }) ||
-              user.defaultAvatarURL()
-          )
-        )
+              user.defaultAvatarURL(),
+          ),
+        ),
     );
 
-    tools.gallary(user, embed);
+    await tools.gallery(user, embed);
     embed.addSeparatorComponents((separator) => separator);
     Object.entries(groupedConnections).forEach(([type, conns]) => {
       embed.addTextDisplayComponents((text) =>
         text.setContent(
-          `${emojis[type]} **${type.charAt(0).toUpperCase() + type.slice(1)}**`
-        )
+          `${emojis[type]} **${type.charAt(0).toUpperCase() + type.slice(1)}**`,
+        ),
       );
 
       let content = "";
@@ -106,7 +107,7 @@ module.exports = {
         }${
           conn.metadata && conn.metadata.created_at
             ? `\n<:log_downright:1420807935608754217>**Created**: <t:${Math.floor(
-                new Date(conn.metadata.created_at).getTime() / 1000
+                new Date(conn.metadata.created_at).getTime() / 1000,
               )}:R>`
             : ""
         }`;
@@ -121,8 +122,8 @@ module.exports = {
         new ButtonBuilder()
           .setLabel("Ban User?")
           .setStyle("Danger")
-          .setCustomId(`banuser_${user.id}`)
-      )
+          .setCustomId(`banuser_${user.id}`),
+      ),
     );
 
     return int
@@ -131,8 +132,7 @@ module.exports = {
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       })
       .then(async () => {
-        if (tag)
-           client.application.emojis.delete(tag.id);
+        if (tag) client.application.emojis.delete(tag.id);
       });
   },
 };

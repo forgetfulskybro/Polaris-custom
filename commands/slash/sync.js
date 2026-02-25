@@ -32,13 +32,13 @@ async run(client, int, tools) {
 
     let currentRoles = member.roles.cache
     let roleCheck = tools.checkLevelRoles(int.guild.roles.cache, currentRoles, level, db.settings.rewards)
-    if (!roleCheck.incorrect.length && !roleCheck.missing.length) return int.reply("✅ Your level roles are already properly synced!")
+    if (!roleCheck.incorrect.length && !roleCheck.missing.length) return int.reply({ content: "✅ Your level roles are already properly synced!", flags: [Discord.MessageFlags.Ephemeral] })
 
     tools.syncLevelRoles(member, roleCheck).then(() => {
         let replyStr = ["🔄 **Level roles successfully synced!**"]
         if (roleCheck.missing.length) replyStr.push(`Added: ${roleCheck.missing.map(x => `<@&${x.id}>`).join(" ")}`)
         if (roleCheck.incorrect.length) replyStr.push(`Removed: ${roleCheck.incorrect.map(x => `<@&${x.id}>`).join(" ")}`)
-        return int.reply(replyStr.join("\n"))
+        return int.reply({ content: replyStr.join("\n"), flags: [MessageFlags.Ephemeral] })
     }).catch(e => int.reply(`Error syncing roles! ${e.message}`))
 
 }}

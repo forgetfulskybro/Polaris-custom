@@ -34,7 +34,7 @@ module.exports = {
           .setAccentColor(0x0089de)
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(`
-These rules have been made in order to keep the server safe for everyone. Every member must follow these rules at all times. If you break the rules, you will receive a warning. 
+These rules have been made in order to keep the server safe for everyone. Every member must follow these rules at all times. If you break the rules, you will receive a warning.
 <:tree_start:1418433583776792726>Important things to keep in mind:
 <:log_downrightdown:1420807950708113529>This is an :flag_us: **English Only** server.
 <:log_downrightdown:1420807950708113529>Some rules may result in a bigger action than just a warning.
@@ -42,8 +42,8 @@ These rules have been made in order to keep the server safe for everyone. Every 
 
 **1. Respect Everyone and don't cause drama**Don't harass/bully or be toxic and avoid having any fights/creating drama in this server.
 
-**2. Follow Discord ToS**Make sure to follow Discord Terms of Service and guidelines at all times. Any violation will result in an instant ban. (e.g. Being under 13) 
-`)
+**2. Follow Discord ToS**Make sure to follow Discord Terms of Service and guidelines at all times. Any violation will result in an instant ban. (e.g. Being under 13)
+`),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
@@ -54,8 +54,8 @@ These rules have been made in order to keep the server safe for everyone. Every 
               new ButtonBuilder()
                 .setLabel("Discord Terms")
                 .setStyle("Link")
-                .setURL("https://discord.com/terms")
-            )
+                .setURL("https://discord.com/terms"),
+            ),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(`
@@ -77,14 +77,14 @@ These rules have been made in order to keep the server safe for everyone. Every 
 
 **8. Do not Self-Advertise**Don't promote your stuff anywhere in the server and in DMs.
 
-**9. Stay on Topic**Keep your topics in the correct channels and if you don't know what channel is for you, can look at the channel topics/pins to see exactly what you must keep on-topic there. Bot commands should not be used in channels meant for conversing. If the commands are related to the topic they can be used as long as they aren't being spammed. 
+**9. Stay on Topic**Keep your topics in the correct channels and if you don't know what channel is for you, can look at the channel topics/pins to see exactly what you must keep on-topic there. Bot commands should not be used in channels meant for conversing. If the commands are related to the topic they can be used as long as they aren't being spammed.
 
 **10. Do not argue with Staff**Do not argue with staff in chats instead, message a higher ranked staff member. Do not ping or annoy staff members without a valid reason. Staff have the right to punish members for reasons that haven't been listed in the rules as long as the reason is valid.
 
 **11. No Begging**Do not beg for code, nitro, roles, items or anything similar from anyone in the server.
 
 **12. No Impersonation**Do not impersonate people/bots by using identical profile pictures or names.
-`)
+`),
           );
 
         interaction.channel.send({
@@ -97,27 +97,21 @@ These rules have been made in order to keep the server safe for everyone. Every 
           .setAccentColor(0x0089de)
           .addMediaGalleryComponents((mediaGallery) =>
             mediaGallery.addItems((galleryItem) =>
-              galleryItem.setURL("https://i.imgur.com/mYIItSf.jpeg")
-            )
+              galleryItem.setURL("https://i.imgur.com/mYIItSf.jpeg"),
+            ),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `## Support Tickets\n\nUse the buttons below the panel to open a support ticket.`
-            )
+              `## Support Tickets\n\nUse the button below the panel to open a support ticket.`,
+            ),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
               new ButtonBuilder()
-                .setCustomId("sky")
-                .setEmoji("1161124874950021130")
-                .setLabel("Contact Sky")
+                .setCustomId("tickets")
+                .setLabel("Open Ticket")
                 .setStyle("Primary"),
-              new ButtonBuilder()
-                .setCustomId("mod")
-                .setEmoji("600055790182596619")
-                .setLabel("Moderation")
-                .setStyle("Secondary")
-            )
+            ),
           );
 
         interaction.channel.send({
@@ -130,20 +124,20 @@ These rules have been made in order to keep the server safe for everyone. Every 
         const text = new ContainerBuilder()
           .setAccentColor(0x0089de)
           .addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(`# Verification`)
+            textDisplay.setContent(`# Verification`),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `Click the button below to start the verification process.`
-            )
+              `Click the button below to start the verification process.`,
+            ),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
               new ButtonBuilder()
                 .setCustomId("verify")
                 .setLabel("Verify")
-                .setStyle("Secondary")
-            )
+                .setStyle("Secondary"),
+            ),
           );
 
         interaction.channel.send({
@@ -157,8 +151,8 @@ These rules have been made in order to keep the server safe for everyone. Every 
           .setAccentColor(0x0089de)
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `## Color Roles\n\nClick the button below to get a color role.`
-            )
+              `## Color Roles\n\nClick the button below to get a color role.`,
+            ),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
@@ -268,13 +262,13 @@ These rules have been made in order to keep the server safe for everyone. Every 
                     value: "429393368926126081",
                     emoji: "1351259917029474314",
                   },
-                ])
-            )
+                ]),
+            ),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `## Continent Roles\n\nClick the button below to get a continent role.`
-            )
+              `## Continent Roles\n\nClick the button below to get a continent role.`,
+            ),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
@@ -314,13 +308,13 @@ These rules have been made in order to keep the server safe for everyone. Every 
                     value: "454739762645827595",
                     emoji: "🌏",
                   },
-                ])
-            )
+                ]),
+            ),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `## Ping Roles\n\nClick the button below to get a ping role.`
-            )
+              `## Ping Roles\n\nClick the button below to get a ping role.`,
+            ),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
@@ -342,13 +336,13 @@ These rules have been made in order to keep the server safe for everyone. Every 
                     label: "Announcement Ping",
                     value: "1010702228073492610",
                   },
-                ])
-            )
+                ]),
+            ),
           )
           .addTextDisplayComponents((textDisplay) =>
             textDisplay.setContent(
-              `\n**Note:** If you want to remove a role just select it again in the select menu. If it's already selected from the first time you used it, select it two times and it should be removed.`
-            )
+              `\n**Note:** If you want to remove a role just select it again in the select menu. If it's already selected from the first time you used it, select it two times and it should be removed.`,
+            ),
           );
 
         interaction.channel.send({

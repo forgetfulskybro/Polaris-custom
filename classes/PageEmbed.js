@@ -1,3 +1,4 @@
+const { MessageFlags } = require('discord.js');
 const Tools = require("./Tools.js")
 const tools = Tools.global
 
@@ -53,37 +54,42 @@ class PageEmbed {
     }
 
     post(int, msgSettings={}) {
-
-        let firstPage = (this.page == 1)
-        let lastPage = (this.page >= this.pages)
-
+        let firstPage = (this.page == 1);
+        let lastPage = (this.page >= this.pages);
+    
         let pageOptions = [
             {style: firstPage ? "Secondary" : "Success", label: `<< Page ${firstPage ? this.pages : Math.max((this.page - 1) || 1, 1)}`, customId: 'prev'},
             {style: lastPage ? "Secondary" : "Success", label: `Page ${lastPage ? 1 : Math.min((this.page + 1), this.pages)} >>`, customId: 'next'}
-        ]
-
+        ];
+    
         if (this.pages == 2) {
-            if (this.page == 1) pageOptions.shift()
-            else pageOptions.splice(1, 1)
+            if (this.page == 1) pageOptions.shift();
+            else pageOptions.splice(1, 1);
         }
-
-        let pageButtons = this.pages <= 1 ? this.extraButtons : tools.button(pageOptions).concat(this.extraButtons)
-
-        let footerText = this.footer || ""
-        if (this.pages > 1) footerText += `\nPage ${this.page} of ${this.pages}`
-        if (footerText) this.embed.setFooter({text: footerText})
-
-        let pgButtonRow = pageButtons[0] ? tools.row(pageButtons) : null
-        
-        if (!this.int) return int.reply(Object.assign({ embeds: [this.embed], components: pgButtonRow, fetchReply: true, ephemeral: this.ephemeral }, msgSettings)).then(msg => {
-            this.int = int
-            if (this.pages > 1) this.handleButtons(msg, pageButtons)
-        }).catch(() => {})
-
-        else return this.int.editReply({embeds: [this.embed], components: pgButtonRow }).then(msg => {
-            this.handleButtons(msg, pageButtons)
-        }).catch(() => {})
-    }
+    
+        let pageButtons = this.pages <= 1 ? this.extraButtons : tools.button(pageOptions).concat(this.extraButtons);
+    
+        let footerText = this.footer || "";
+        if (this.pages > 1) footerText += `\nPage ${this.page} of ${this.pages}`;
+        if (footerText) this.embed.setFooter({text: footerText});
+    
+        let pgButtonRow = pageButtons[0] ? tools.row(pageButtons) : null;
+    
+        if (!this.int) return int.reply(Object.assign({ 
+            embeds: [this.embed], 
+            components: pgButtonRow, 
+            withResponse: true, 
+            flags: [MessageFlags.Ephemeral] 
+        }, msgSettings)).then(response => {
+            this.int = int;
+            const message = response.resource.message;
+            if (this.pages > 1) this.handleButtons(message, pageButtons);
+        }).catch(() => {});
+    
+        else return this.int.editReply({embeds: [this.embed], components: pgButtonRow, flags: [MessageFlags.Ephemeral] }).then(msg => {
+            this.handleButtons(msg, pageButtons);
+        }).catch(() => {});
+    }   
 
     handleButtons(msg, buttons) {
         let buttonPressed = false
@@ -101,7 +107,7 @@ class PageEmbed {
         })
         collector.on('end', b => { 
             if (!buttonPressed) {
-                this.int.editReply({ components: tools.disableButtons(buttons) })
+                this.int.editReply({ components: tools.disableButtons(buttons), flags: [MessageFlags.Ephemeral] })
                 this.destroy()
             }
         })
