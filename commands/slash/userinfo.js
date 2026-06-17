@@ -33,7 +33,7 @@ module.exports = {
       if (user.primaryGuild && user.primaryGuild.identityEnabled) {
         const identity = user.primaryGuild;
         tag = await client.application.emojis.create({
-          name: `tempTag_${user.id}_${Math.random()}`,
+          name: `tempTag`,
           attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
         });
       }
