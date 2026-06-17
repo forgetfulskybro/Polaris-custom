@@ -1,4 +1,4 @@
-This is a modified version of the original Polaris bot by GDColon. The original code is available [here](https://github.com/GDColon/Polaris-Open). This brings my own support bot that adds Modmail, Invite Tracking, and Verification.
+This is a modified version of the original Polaris bot by GDColon. The original code is available [here](https://github.com/GDColon/Polaris-Open). My version updates quite a bit that adds modmail, invite tracking, and verification system while also editing some of the original commands/systems to my liking.
 
 
 
