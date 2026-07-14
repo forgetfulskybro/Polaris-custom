@@ -4,12 +4,16 @@ const {
   ButtonBuilder,
   ContainerBuilder,
   MessageFlags,
+  AttachmentBuilder,
 } = require("discord.js");
 const captcha = require("../models/captcha.js");
 const crypto = require("node:crypto");
+const { createCanvas } = require("canvas");
+const fs = require("fs");
+const path = require("path");
 
 module.exports = class Captcha {
-  randomString(length = 20) {
+  randomString(length = 6) {
     let result = "";
     const characters =
       "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -22,9 +26,65 @@ module.exports = class Captcha {
     return result;
   }
 
+  generateCaptchaImage(code) {
+    const width = 300;
+    const height = 100;
+    const canvas = createCanvas(width, height);
+    const ctx = canvas.getContext("2d");
+
+    for (let i = 0; i < 7; i++) {
+      ctx.strokeStyle = this.getRandomColor(100, 200);
+      ctx.lineWidth = Math.random() * 2 + 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * width, Math.random() * height);
+      ctx.lineTo(Math.random() * width, Math.random() * height);
+      ctx.stroke();
+    }
+
+    for (let i = 0; i < 100; i++) {
+      ctx.fillStyle = this.getRandomColor(150, 255);
+      ctx.beginPath();
+      ctx.arc(Math.random() * width, Math.random() * height, 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const charWidth = width / (code.length + 1);
+    for (let i = 0; i < code.length; i++) {
+      ctx.save();
+      const x = charWidth * (i + 0.5);
+      const y = height / 2;
+      ctx.translate(x, y);
+      ctx.rotate((Math.random() - 0.5) * 0.5);
+      ctx.font = `${Math.random() * 20 + 30}px Arial`;
+      ctx.fillStyle = this.getRandomColor(150, 255);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(code[i], 0, 0);
+      ctx.restore();
+    }
+
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = this.getRandomColor(150, 255);
+      ctx.lineWidth = Math.random() * 2 + 1;
+      ctx.beginPath();
+      ctx.moveTo(Math.random() * width, Math.random() * height);
+      ctx.lineTo(Math.random() * width, Math.random() * height);
+      ctx.stroke();
+    }
+
+    return canvas.toBuffer("image/png");
+  }
+
+  getRandomColor(min, max) {
+    const r = Math.floor(Math.random() * (max - min) + min);
+    const g = Math.floor(Math.random() * (max - min) + min);
+    const b = Math.floor(Math.random() * (max - min) + min);
+    return `rgb(${r},${g},${b})`;
+  }
+
   async verify(interaction) {
     const modalObject = {
-      title: `Captcha System`,
+      title: `Captcha Verification`,
       custom_id: "checkCaptcha",
       components: [
         {
@@ -46,7 +106,7 @@ module.exports = class Captcha {
             {
               type: 4,
               style: 1,
-              max_length: 20,
+              max_length: 6,
               required: true,
               custom_id: "input",
               label: "Code",
@@ -137,6 +197,18 @@ module.exports = class Captcha {
       }).catch(() => {});
   }
 
+  whyVerify(interaction) {
+    const container = new ContainerBuilder()
+      .addTextDisplayComponents((text) =>
+        text.setContent('## Why Verify?\n\nVerification helps protect our server from automated bots and spam accounts. By completing a simple captcha, you prove you\'re a real person.')
+      );
+
+    return interaction.reply({
+      components: [container],
+      flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+    });
+  }
+
   async start(interaction) {
     if (interaction.member.roles.cache.has(interaction.client.config.verificationRole))
       return interaction.deferUpdate();
@@ -148,27 +220,40 @@ module.exports = class Captcha {
       user: interaction.user.id,
     }).save();
 
-    const embed = new ContainerBuilder()
-      .setAccentColor(0x0099ff)
-      .addTextDisplayComponents((textDisplay) =>
-        textDisplay.setContent(
-          `Hello, you're being sent this message to verify your identity with a captcha code. Click the button below and input the code to be verified!\n\n\`${code}\``,
-        ),
+    const imageBuffer = this.generateCaptchaImage(code);
+    const captchaAttachment = new AttachmentBuilder(imageBuffer, { name: 'captcha.png' });
+    
+    const mainContainer = new ContainerBuilder()    
+      .addTextDisplayComponents(
+        (text) => text.setContent('## **Captcha Verification**\nSolve the captcha to join the server')
       )
-      .addSeparatorComponents((separator) => separator)
-      .addActionRowComponents((actionRow) =>
-        actionRow.setComponents(
+
+      .addMediaGalleryComponents((gallery) =>
+        gallery.addItems((item) =>
+          item
+            .setURL('attachment://captcha.png')
+            .setDescription('Solve this captcha')
+        )
+      )
+
+      .addActionRowComponents((row) =>
+        row.addComponents(
           new ButtonBuilder()
-            .setCustomId("captcha")
-            .setLabel("Captcha")
+            .setCustomId('submit')
+            .setLabel('Submit Answer')
             .setStyle("Secondary"),
-        ),
+          new ButtonBuilder()
+            .setCustomId('whyVerify')
+            .setLabel('Why do I need to verify?')
+            .setStyle("Secondary")
+        )
       );
 
     let dm = false;
     await interaction.user
       .send({
-        components: [embed],
+        components: [mainContainer],
+        files: [captchaAttachment],
         flags: MessageFlags.IsComponentsV2,
       })
       .catch((e) => {

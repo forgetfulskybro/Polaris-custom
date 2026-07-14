@@ -119,8 +119,11 @@ module.exports = async (client, interaction) => {
         case "verify":
           await client.captcha.start(interaction);
           break;
-        case "captcha":
+        case "submit":
           await client.captcha.verify(interaction);
+          break;
+        case "whyVerify":
+          await client.captcha.whyVerify(interaction);
           break;
         case "tickets":
           await client.ticket.create(interaction);

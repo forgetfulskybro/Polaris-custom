@@ -122,14 +122,8 @@ These rules have been made in order to keep the server safe for everyone. Every 
 
       case "verify":
         const text = new ContainerBuilder()
-          .setAccentColor(0x0089de)
           .addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(`# Verification`),
-          )
-          .addTextDisplayComponents((textDisplay) =>
-            textDisplay.setContent(
-              `Click the button below to start the verification process.`,
-            ),
+            textDisplay.setContent(`## **Captcha Verification**\nSolve the captcha to join the server`),
           )
           .addActionRowComponents((actionRow) =>
             actionRow.setComponents(
