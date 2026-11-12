@@ -1,6 +1,34 @@
 const { MessageFlags } = require("discord.js");
 const Tools = require("../../classes/Tools.js");
 const Blocked = require("../../models/blocked.js");
+
+function isExpiredInteraction(error) {
+  return error?.code === 10062 || error?.rawError?.code === 10062;
+}
+
+async function sendError(interaction, error) {
+  if (isExpiredInteraction(error)) {
+    console.warn(
+      `[interaction] ${interaction.commandName || interaction.customId || interaction.id} expired before it could respond`,
+    );
+    return;
+  }
+
+  const payload = {
+    content: `**Error!** ${error.message}`,
+    flags: MessageFlags.Ephemeral,
+  };
+
+  try {
+    if (interaction.replied) await interaction.followUp(payload);
+    else if (interaction.deferred) await interaction.editReply({ content: payload.content });
+    else await interaction.reply(payload);
+  } catch (replyError) {
+    if (isExpiredInteraction(replyError) || replyError?.code === 40060) return;
+    console.error("Failed to send interaction error response:", replyError);
+  }
+}
+
 module.exports = async (client, interaction) => {
   let foundCommand;
   if (interaction.isStringSelectMenu()) {
@@ -71,11 +99,8 @@ module.exports = async (client, interaction) => {
     try {
       await foundCommand.run(client, interaction, tools);
     } catch (e) {
-      console.error(e);
-      interaction.reply({
-        content: "**Error!** " + e.message,
-        flags: MessageFlags.Ephemeral,
-      });
+      if (!isExpiredInteraction(e)) console.error(e);
+      await sendError(interaction, e);
     }
   } else if (interaction.isButton()) {
     let tools = new Tools(client, interaction);
@@ -92,11 +117,8 @@ module.exports = async (client, interaction) => {
       try {
         await foundCommand.run(client, interaction, tools);
       } catch (e) {
-        console.error(e);
-        interaction.reply({
-          content: "**Error!** " + e.message,
-          flags: MessageFlags.Ephemeral,
-        });
+        if (!isExpiredInteraction(e)) console.error(e);
+        await sendError(interaction, e);
       }
     } else {
       const block = await Blocked.findOne({

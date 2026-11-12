@@ -41,15 +41,6 @@ module.exports = {
           .catch(() => {});
 
         const user = await client.users.fetch(userId, { cache: false, force: true }).catch(() => null);
-        let tag;
-        if (user.primaryGuild && user.primaryGuild.identityEnabled) {
-          const identity = user.primaryGuild;
-          tag = await client.application.emojis.create({
-            name: `tempTag`,
-            attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
-          });
-        }
-
         const embed = new ContainerBuilder().addSectionComponents((sect) =>
           sect
             .addTextDisplayComponents((text) =>
@@ -57,9 +48,7 @@ module.exports = {
                 `User **${user.tag}** ${
                   user.globalName ? `(${user.globalName})` : ""
                 }\n**Tag:** ${
-                  tag
-                    ? `<:${tag.name}:${tag.id}>${user.primaryGuild.tag}`
-                    : "None"
+                  user.primaryGuild?.identityEnabled ? user.primaryGuild.tag : "None"
                 }\n**ID:** ${user.id}\n**Bot:** ${
                   user.bot ? "Yes" : "No"
                 }\n**Created:** <t:${Math.floor(
@@ -91,15 +80,10 @@ module.exports = {
           )
         );
 
-        return modalInteraction
-          .update({
-            components: [embed],
-            flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-          })
-          .then(async () => {
-            if (tag)
-               client.application.emojis.delete(tag.id);
-          });
+        return modalInteraction.update({
+          components: [embed],
+          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        });
       });
   },
 };

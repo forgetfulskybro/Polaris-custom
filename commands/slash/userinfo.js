@@ -1,5 +1,6 @@
-const { ContainerBuilder, MessageFlags, Routes } = require("discord.js");
+const { ContainerBuilder, MessageFlags, Routes, AttachmentBuilder } = require("discord.js");
 const { ButtonBuilder } = require("@discordjs/builders");
+const { buildProfileCard } = require("../../classes/profileCard.js");
 module.exports = {
   metadata: {
     dev: true,
@@ -17,34 +18,34 @@ module.exports = {
   },
 
   async run(client, interaction, tools) {
+    try {
+      await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+    } catch (error) {
+      // The interaction expired before we could acknowledge it; there is
+      // nothing left to respond to.
+      if (error?.code === 10062) return;
+      throw error;
+    }
+
     const userId = interaction.options.get("user").value;
     const user = await client.users
       .fetch(userId, { cache: false, force: true })
       .catch(() => null);
     if (!user)
-      return interaction.reply({ content: "User not found.", flags: [MessageFlags.Ephemeral] });
+      return interaction.editReply({ content: "User not found." });
 
     if (!user.bot) {
       let banned = await client.guilds.cache
         .get("286252263109033984")
         .bans.fetch(user.id)
         .catch(() => null);
-      let tag;
-      if (user.primaryGuild && user.primaryGuild.identityEnabled) {
-        const identity = user.primaryGuild;
-        tag = await client.application.emojis.create({
-          name: `tempTag`,
-          attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
-        });
-      }
-
       const embed = new ContainerBuilder().addSectionComponents((sect) =>
         sect
           .addTextDisplayComponents((text) =>
             text.setContent(
               `User **${user.tag}** ${
                 user.globalName ? `(${user.globalName})` : ""
-              }\n**Tag:** ${tag ? `<:${tag.name}:${tag.id}>${user.primaryGuild.tag}` : "None"}\n**ID:** ${user.id}\n**Created:** <t:${Math.floor(user.createdTimestamp / 1000)}:F> (<t:${Math.floor(user.createdTimestamp / 1000)}:R>)\n`,
+              }\n**Tag:** ${user.primaryGuild?.identityEnabled ? user.primaryGuild.tag : "None"}\n**ID:** ${user.id}\n**Created:** <t:${Math.floor(user.createdTimestamp / 1000)}:F> (<t:${Math.floor(user.createdTimestamp / 1000)}:R>)\n`,
             ),
           )
           .setThumbnailAccessory((thumb) =>
@@ -55,7 +56,44 @@ module.exports = {
           ),
       );
 
-      await tools.gallery(user, embed);
+      const timeout = { signal: AbortSignal.timeout(7000) };
+      const [japiUser, japiConnections, badgeProfile] = await Promise.all([
+        fetch(`https://japi.rest/discord/v1/user/${user.id}`, timeout)
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => null),
+        fetch(`https://japi.rest/discord/v1/user/${user.id}/connections`, timeout)
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => null),
+        fetch(`https://dcdn.dstn.to/profile/${user.id}`, timeout)
+          .then((res) => (res.ok ? res.json() : null))
+          .catch(() => null),
+      ]);
+
+      let cardFile = null;
+      try {
+        const card = await buildProfileCard(user, japiUser?.data, {
+          connections: japiConnections?.data,
+          badges: badgeProfile?.badges,
+          effect: badgeProfile?.user_profile?.profile_effect,
+          bio: badgeProfile?.user_profile?.bio,
+          pronouns: badgeProfile?.user_profile?.pronouns,
+          accentColor: badgeProfile?.user_profile?.accent_color,
+        });
+        if (card) {
+          cardFile = new AttachmentBuilder(card.buffer, { name: card.name });
+          embed.addMediaGalleryComponents((gallery) =>
+            gallery.addItems((item) =>
+              item
+                .setURL(`attachment://${card.name}`)
+                .setDescription(`${user.displayName}'s profile card`),
+            ),
+          );
+        }
+      } catch (error) {
+        console.error("Failed to render userinfo profile card:", error);
+      }
+
+      if (!cardFile) await tools.gallery(user, embed);
       embed.setAccentColor(0x3665bb);
       embed.addSeparatorComponents((separator) => separator);
       if (banned) {
@@ -81,14 +119,11 @@ module.exports = {
             .setCustomId(`connections_${user.id}`),
         ),
       );
-      return interaction
-        .reply({
-          components: [embed],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-        })
-        .then(async () => {
-          if (tag) client.application.emojis.delete(tag.id);
-        });
+      return interaction.editReply({
+        components: [embed],
+        files: cardFile ? [cardFile] : [],
+        flags: [MessageFlags.IsComponentsV2],
+      });
     } else {
       const bot = await fetch(
         `https://beta.japi.rest/discord/v1/application/${user.id}`,
@@ -118,9 +153,9 @@ module.exports = {
         await tools.gallery(user, embed);
         embed.setAccentColor(0x3665bb);
 
-        return interaction.reply({
+        return interaction.editReply({
           components: [embed],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          flags: [MessageFlags.IsComponentsV2],
         });
       }
 
@@ -227,9 +262,9 @@ module.exports = {
       embed.setAccentColor(0x3665bb);
 
       return interaction
-        .reply({
+        .editReply({
           components: [embed],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+          flags: [MessageFlags.IsComponentsV2],
         })
         .then(async () => {
           if (icon) client.application.emojis.delete(icon.id);

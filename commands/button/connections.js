@@ -1,31 +1,11 @@
-const { MessageFlags, ContainerBuilder, ButtonBuilder } = require("discord.js");
-const emojis = {
-  mastodon: "<:mastodon:1422024653311836223>",
-  instagram: "<:instagram:1422023623459213393>",
-  youtube: "<:youtube:1422015121617715251>",
-  xbox: "<:xbox:1422015111417303202>",
-  twitter: "<:twitter:1422015098444058666>",
-  x: "<:twitter:1422015098444058666>",
-  twitch: "<:twitch:1422015086020792444>",
-  tiktok: "<:tiktok:1422015072028327957>",
-  steam: "<:steam:1422015055402369065>",
-  spotify: "<:spotify:1422015037010219099>",
-  riotgames: "<:riotgames:1422015021759725599>",
-  reddit: "<:reddit:1422015008728027288>",
-  playstation: "<:playstation:1422014997914976356>",
-  paypal: "<:paypal:1422014976146673725>",
-  leagueoflegends: "<:leagueoflegends:1422014964964786418>",
-  github: "<:github:1422014954772496524>",
-  facebook: "<:facebook:1422014942340579479>",
-  epicgames: "<:epicgames:1422014927237021841>",
-  ebay: "<:ebay:1422014920417083503>",
-  domain: "<:domain:1422014909964615833>",
-  crunchyroll: "<:crunchyroll:1422014902666530908>",
-  bungie: "<:bungie:1422014892973625364>",
-  bluesky: "<:bluesky:1422014883515334656>",
-  battlenet: "<:battlenet:1422014873419649055>",
-  roblox: "<:roblox:1476246084350246954>",
-};
+const {
+  MessageFlags,
+  ContainerBuilder,
+  ButtonBuilder,
+  AttachmentBuilder,
+} = require("discord.js");
+const { getCachedProfileCard } = require("../../classes/profileCard.js");
+const emojis = require("../../json/connection_emojis.json");
 
 module.exports = {
   metadata: {
@@ -38,13 +18,14 @@ module.exports = {
 
     const connections = await fetch(
       `https://japi.rest/discord/v1/user/${userId}/connections`,
+      { signal: AbortSignal.timeout(7000) },
     )
-      .then((res) => res.json())
-      .catch(() => {return});
-    if (connections.data.length == 0 || !connections || !connections.data || connections.data.error)
-      return;
+      .then((res) => (res.ok ? res.json() : null))
+      .catch(() => null);
+    const connectionData = Array.isArray(connections?.data) ? connections.data : [];
+    if (!connectionData.length) return;
 
-    const groupedConnections = connections.data.reduce((acc, conn) => {
+    const groupedConnections = connectionData.reduce((acc, conn) => {
       if (!acc[conn.type]) {
         acc[conn.type] = [];
       }
@@ -53,15 +34,6 @@ module.exports = {
     }, {});
 
     const user = await client.users.fetch(userId, { cache: false, force: true }).catch(() => null);
-    let tag;
-    if (user.primaryGuild && user.primaryGuild.identityEnabled) {
-      const identity = user.primaryGuild;
-      tag = await client.application.emojis.create({
-        name: `tempTag`,
-        attachment: `https://cdn.discordapp.com/clan-badges/${identity.identityGuildId}/${identity.badge}.png`,
-      });
-    }
-
     const embed = new ContainerBuilder().addSectionComponents((sect) =>
       sect
         .addTextDisplayComponents((text) =>
@@ -69,7 +41,7 @@ module.exports = {
             `User **${user.tag}** ${
               user.globalName ? `(${user.globalName})` : ""
             }\n**Tag:** ${
-              tag ? `<:${tag.name}:${tag.id}>${user.primaryGuild.tag}` : "None"
+              user.primaryGuild?.identityEnabled ? user.primaryGuild.tag : "None"
             }\n**ID:** ${user.id}\n**Bot:** ${
               user.bot ? "Yes" : "No"
             }\n**Created:** <t:${Math.floor(
@@ -85,7 +57,30 @@ module.exports = {
         ),
     );
 
-    await tools.gallery(user, embed);
+    const cachedCard = getCachedProfileCard(user.id);
+    const existingCard =
+      !cachedCard &&
+      int.message?.attachments?.find((attachment) =>
+        /^profile-.*\.(png|gif)$/i.test(attachment.name || ""),
+      );
+
+    let cardFile = null;
+    const card = cachedCard || existingCard;
+    if (card) {
+      cardFile = new AttachmentBuilder(cachedCard ? cachedCard.buffer : card.url, {
+        name: card.name,
+      });
+      embed.addMediaGalleryComponents((gallery) =>
+        gallery.addItems((item) =>
+          item
+            .setURL(`attachment://${card.name}`)
+            .setDescription(`${user.displayName}'s profile card`),
+        ),
+      );
+    } else {
+      await tools.gallery(user, embed);
+    }
+
     embed.addSeparatorComponents((separator) => separator);
     Object.entries(groupedConnections).forEach(([type, conns]) => {
       embed.addTextDisplayComponents((text) =>
@@ -126,13 +121,10 @@ module.exports = {
       ),
     );
 
-    return int
-      .editReply({
-        components: [embed],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      })
-      .then(async () => {
-        if (tag) client.application.emojis.delete(tag.id);
-      });
+    return int.editReply({
+      components: [embed],
+      files: cardFile ? [cardFile] : [],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+    });
   },
 };
